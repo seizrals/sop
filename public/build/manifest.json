@@ -30,6 +30,22 @@
       "assets/fa-v4compatibility-CErXDOsT.woff2"
     ]
   },
+  "resources/img/laut-1.png": {
+    "file": "assets/laut-1-Cl9X3_eu.png",
+    "src": "resources/img/laut-1.png"
+  },
+  "resources/img/laut-2.png": {
+    "file": "assets/laut-2-BS_jeQef.png",
+    "src": "resources/img/laut-2.png"
+  },
+  "resources/img/laut-3.png": {
+    "file": "assets/laut-3-C_s1L4Ll.png",
+    "src": "resources/img/laut-3.png"
+  },
+  "resources/img/logo-bps.png": {
+    "file": "assets/logo-bps-Cu-RBZxL.png",
+    "src": "resources/img/logo-bps.png"
+  },
   "resources/js/app.js": {
     "file": "assets/app-_swCgE72.js",
     "name": "app",
