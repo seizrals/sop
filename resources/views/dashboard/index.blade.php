@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
 @php
-    $lautHero = \Illuminate\Support\Facades\Vite::asset('resources/img/laut-1.png');
-    $lautPanel = \Illuminate\Support\Facades\Vite::asset('resources/img/laut-3.png');
+    $lautHero = asset('resources/img/laut-1.png');
+    $lautPanel = asset('resources/img/laut-3.png');
     $previewStatusCounts = [
         'draft' => 21,
         'revisi' => 18,

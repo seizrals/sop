@@ -14,8 +14,8 @@
     </head>
     <body class="font-sans antialiased text-slate-900">
         @php
-            $logoBps = \Illuminate\Support\Facades\Vite::asset('resources/img/logo-bps.png');
-            $lautHero = \Illuminate\Support\Facades\Vite::asset('resources/img/laut-2.png');
+            $logoBps = asset('resources/img/logo-bps.png');
+            $lautHero = asset('resources/img/laut-2.png');
         @endphp
 
         <div class="relative min-h-screen overflow-hidden bg-[linear-gradient(180deg,#dce6f4_0%,#e8eff8_42%,#dfe8f4_100%)]">
