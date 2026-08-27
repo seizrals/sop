@@ -2,7 +2,7 @@
 
 @php
     $isEdit = filled($document->id);
-    $logoBps = asset('resources/img/logo-bps.png');
+    $logoBps = \Illuminate\Support\Facades\Vite::asset('resources/img/logo-bps.png');
     $statusLabel = [
         'draft' => 'Draft',
         'revisi' => 'Revisi',

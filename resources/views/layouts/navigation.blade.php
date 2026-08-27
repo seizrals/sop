@@ -6,9 +6,9 @@
         ['label' => 'Arsip', 'route' => 'archives.index', 'active' => 'archives.*', 'icon' => 'fa-solid fa-box-archive'],
         ['label' => 'Pengguna', 'route' => 'users.index', 'active' => 'users.*', 'icon' => 'fa-solid fa-users'],
     ];
-    $logoBps = asset('resources/img/logo-bps.png');
-    $lautHero = asset('resources/img/laut-2.png');
-    $lautSidebar = asset('resources/img/laut-1.png');
+    $logoBps = \Illuminate\Support\Facades\Vite::asset('resources/img/logo-bps.png');
+    $lautHero = \Illuminate\Support\Facades\Vite::asset('resources/img/laut-2.png');
+    $lautSidebar = \Illuminate\Support\Facades\Vite::asset('resources/img/laut-1.png');
     $todayLabel = \Carbon\Carbon::now()->translatedFormat('d F Y');
     $authUser = Auth::user();
 @endphp

@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
 @php
-    $lautHero = asset('resources/img/laut-2.png');
-    $lautCard = asset('resources/img/laut-3.png');
+    $lautHero = \Illuminate\Support\Facades\Vite::asset('resources/img/laut-2.png');
+    $lautCard = \Illuminate\Support\Facades\Vite::asset('resources/img/laut-3.png');
 
     $teamCards = $teams->map(function ($team) {
         return [
