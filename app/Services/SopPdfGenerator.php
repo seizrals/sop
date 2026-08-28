@@ -23,7 +23,7 @@ class SopPdfGenerator
 
         File::put($inputPath, json_encode($this->payload($document, $executors, $activities), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
-        $nodeBinary = env('NODE_BINARY', 'node');
+        $nodeBinary = config('sop.node_binary', 'node');
 
         $process = new Process(
             [
