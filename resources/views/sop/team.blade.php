@@ -1,6 +1,8 @@
 @extends('layouts.app')
 
 @php
+    $authUser = Auth::user();
+    $isAdmin = $authUser?->role === 'admin';
     $tableActivities = $activities->map(fn ($activity) => [
         'model' => $activity,
         'name' => $activity->name,
@@ -53,10 +55,33 @@
                                         </div>
                                     </td>
                                     <td class="px-5 py-4 text-slate-500">{{ $activity['sop_documents_count'] }}</td>
-                                    <td class="px-5 py-4 text-right">
-                                        <a href="{{ route('sop.activity', [$team, $activity['model']]) }}" class="inline-flex items-center justify-center rounded-2xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100">
-                                            Masuk
-                                        </a>
+                                    <td class="px-5 py-4">
+                                        <div class="flex flex-wrap justify-end gap-2">
+                                            <a href="{{ route('sop.activity', [$team, $activity['model']]) }}" class="inline-flex items-center justify-center rounded-2xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100">
+                                                Masuk
+                                            </a>
+                                            @if ($isAdmin)
+                                                <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 text-amber-700 transition hover:bg-amber-100" title="Edit Kegiatan" data-activity-edit="{{ $activity['model']->id }}" data-activity-name="{{ $activity['name'] }}" data-activity-description="{{ $activity['description'] ?? '' }}">
+                                                    <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M12 20h9"></path>
+                                                        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"></path>
+                                                    </svg>
+                                                </button>
+                                                <form method="POST" action="{{ route('sop.activity.destroy', [$team, $activity['model']]) }}" class="inline" onsubmit="return confirm('Anda yakin menghapus kegiatan ini? Seluruh SOP di dalamnya juga akan ikut terhapus.')">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button class="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100" type="submit" title="Hapus Kegiatan (Admin Only)">
+                                                        <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                                            <path d="M3 6h18"></path>
+                                                            <path d="M8 6V4h8v2"></path>
+                                                            <path d="M19 6l-1 14H6L5 6"></path>
+                                                            <path d="M10 11v6"></path>
+                                                            <path d="M14 11v6"></path>
+                                                        </svg>
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach
@@ -84,4 +109,79 @@
             </form>
         </section>
     </div>
+
+    @if ($isAdmin)
+        <x-modal id="edit-activity-modal" :title="'Edit Kegiatan'">
+            <form id="edit-activity-form" method="POST" action="">
+                @csrf
+                @method('PATCH')
+                <div class="space-y-4">
+                    <div>
+                        <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.25em] text-slate-500" for="edit-name">Nama Kegiatan</label>
+                        <input id="edit-name" name="name" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100" placeholder="Nama kegiatan" required />
+                    </div>
+                    <div>
+                        <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.25em] text-slate-500" for="edit-description">Deskripsi</label>
+                        <textarea id="edit-description" name="description" class="min-h-32 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100" placeholder="Keterangan singkat kegiatan"></textarea>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end gap-3">
+                    <button type="button" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" data-modal-close="edit-activity-modal">
+                        Batal
+                    </button>
+                    <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
+                        Simpan Perubahan
+                    </button>
+                </div>
+            </form>
+        </x-modal>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const editButtons = document.querySelectorAll('[data-activity-edit]');
+                const form = document.getElementById('edit-activity-form');
+                const nameInput = document.getElementById('edit-name');
+                const descInput = document.getElementById('edit-description');
+
+                const openModal = (modalId) => {
+                    const modal = document.getElementById(modalId);
+                    if (!modal) return;
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                };
+
+                const closeModal = (modalId) => {
+                    const modal = document.getElementById(modalId);
+                    if (!modal) return;
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                };
+
+                document.querySelectorAll('[data-modal-close]').forEach((btn) => {
+                    btn.addEventListener('click', () => closeModal(btn.dataset.modalClose));
+                });
+
+                editButtons.forEach((button) => {
+                    button.addEventListener('click', () => {
+                        const activityId = button.dataset.activityEdit;
+                        const name = button.dataset.activityName || '';
+                        const description = button.dataset.activityDescription || '';
+
+                        const baseUrl = `{{ url('/sop/team/' . $team->id . '/activity') }}/${activityId}`;
+                        form.action = baseUrl;
+                        nameInput.value = name;
+                        descInput.value = description;
+
+                        openModal('edit-activity-modal');
+                    });
+                });
+
+                document.getElementById('edit-activity-modal')?.addEventListener('click', (event) => {
+                    if (event.target.id === 'edit-activity-modal') {
+                        closeModal('edit-activity-modal');
+                    }
+                });
+            });
+        </script>
+    @endif
 @endsection

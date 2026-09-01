@@ -1,6 +1,8 @@
 @extends('layouts.app')
 
 @php
+    $authUser = Auth::user();
+    $isAdmin = $authUser?->role === 'admin';
     $statusClass = [
         'draft' => 'border-slate-200 bg-slate-50 text-slate-700',
         'revisi' => 'border-amber-200 bg-amber-50 text-amber-700',
@@ -156,11 +158,11 @@
                                                     <path d="M4 21h16"></path>
                                                 </svg>
                                             </a>
-                                            @if ($document['status'] !== 'final')
-                                                <form method="POST" action="{{ route('sop.destroy', $document['model']) }}" class="inline">
+                                            @if ($document['status'] !== 'final' || $isAdmin)
+                                                <form method="POST" action="{{ route('sop.destroy', $document['model']) }}" class="inline" onsubmit="{{ $document['status'] === 'final' ? 'return confirm(\'Anda yakin menghapus SOP FINAL? Tindakan ini tidak dapat dibatalkan.\')' : '' }}">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100" type="submit" title="Hapus SOP">
+                                                    <button class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border {{ $document['status'] === 'final' ? 'border-red-400 bg-red-100 text-red-800' : 'border-red-200 bg-red-50 text-red-700' }} transition hover:bg-red-100" type="submit" title="{{ $document['status'] === 'final' ? 'Hapus SOP Final (Admin Only)' : 'Hapus SOP' }}">
                                                         <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                                             <path d="M3 6h18"></path>
                                                             <path d="M8 6V4h8v2"></path>
@@ -251,11 +253,11 @@
                                                                                     <path d="M4 21h16"></path>
                                                                                 </svg>
                                                                             </a>
-                                                                            @if (($historyItem['status'] ?? 'draft') !== 'final')
-                                                                                <form method="POST" action="{{ route('sop.destroy', $historyItem['model']) }}" class="inline">
+                                                                            @if (($historyItem['status'] ?? 'draft') !== 'final' || $isAdmin)
+                                                                                <form method="POST" action="{{ route('sop.destroy', $historyItem['model']) }}" class="inline" onsubmit="{{ ($historyItem['status'] ?? 'draft') === 'final' ? 'return confirm(\'Anda yakin menghapus SOP FINAL? Tindakan ini tidak dapat dibatalkan.\')' : '' }}">
                                                                                     @csrf
                                                                                     @method('DELETE')
-                                                                                    <button class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100" type="submit" title="Hapus SOP">
+                                                                                    <button class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border {{ ($historyItem['status'] ?? 'draft') === 'final' ? 'border-red-400 bg-red-100 text-red-800' : 'border-red-200 bg-red-50 text-red-700' }} transition hover:bg-red-100" type="submit" title="{{ ($historyItem['status'] ?? 'draft') === 'final' ? 'Hapus SOP Final (Admin Only)' : 'Hapus SOP' }}">
                                                                                         <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                                                                             <path d="M3 6h18"></path>
                                                                                             <path d="M8 6V4h8v2"></path>

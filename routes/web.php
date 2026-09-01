@@ -20,6 +20,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [SopController::class, 'index'])->name('index');
         Route::get('/team/{team}', [SopController::class, 'team'])->name('team');
         Route::post('/team/{team}/activity', [SopController::class, 'storeActivity'])->name('activity.store');
+        Route::patch('/team/{team}/activity/{activity}', [SopController::class, 'updateActivity'])->name('activity.update');
+        Route::delete('/team/{team}/activity/{activity}', [SopController::class, 'destroyActivity'])->name('activity.destroy');
         Route::post('/team/{team}/executor', [SopController::class, 'storeMasterExecutor'])->name('executor.store');
         Route::get('/team/{team}/activity/{activity}', [SopController::class, 'activity'])->name('activity');
         Route::get('/team/{team}/activity/{activity}/create', [SopController::class, 'create'])->name('create');

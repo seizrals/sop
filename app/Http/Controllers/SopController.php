@@ -204,13 +204,49 @@ class SopController extends Controller
 
     public function destroy(SopDocument $document): RedirectResponse
     {
-        if ($document->status === 'final') {
-            return back()->with('error', 'SOP berstatus final tidak dapat dihapus.');
+        $isAdmin = auth()->user()?->role === 'admin';
+
+        if ($document->status === 'final' && !$isAdmin) {
+            return back()->with('error', 'Hanya admin yang dapat menghapus SOP berstatus final.');
         }
+
+        $document->load(['team', 'activity']);
+        $team = $document->team;
+        $activity = $document->activity;
 
         $document->delete();
 
+        if ($team && $activity) {
+            return redirect()->route('sop.activity', [$team, $activity])->with('success', 'SOP berhasil dihapus.');
+        }
+
         return back()->with('success', 'SOP berhasil dihapus.');
+    }
+
+    public function updateActivity(Request $request, Team $team, TeamActivity $activity): RedirectResponse
+    {
+        abort_unless((int) $activity->team_id === (int) $team->id, 404);
+        abort_unless(auth()->user()?->role === 'admin', 403);
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+        ]);
+
+        $activity->update($validated);
+
+        return redirect()->route('sop.team', $team)->with('success', 'Kegiatan berhasil diperbarui.');
+    }
+
+    public function destroyActivity(Team $team, TeamActivity $activity): RedirectResponse
+    {
+        abort_unless((int) $activity->team_id === (int) $team->id, 404);
+        abort_unless(auth()->user()?->role === 'admin', 403);
+
+        $activity->sopDocuments()->delete();
+        $activity->delete();
+
+        return redirect()->route('sop.team', $team)->with('success', 'Kegiatan dan seluruh SOP-nya berhasil dihapus.');
     }
 
     public function download(SopDocument $document)
