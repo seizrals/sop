@@ -4,7 +4,8 @@
         ['label' => 'SOP', 'route' => 'sop.index', 'active' => 'sop.*', 'icon' => 'fa-solid fa-file-circle-plus'],
         ['label' => 'Template', 'route' => 'templates.index', 'active' => 'templates.*', 'icon' => 'fa-regular fa-clone'],
         ['label' => 'Arsip', 'route' => 'archives.index', 'active' => 'archives.*', 'icon' => 'fa-solid fa-box-archive'],
-        ['label' => 'Pengguna', 'route' => 'users.index', 'active' => 'users.*', 'icon' => 'fa-solid fa-users'],
+        ['label' => 'Manajemen Tim', 'route' => 'teams.index', 'active' => 'teams.*', 'icon' => 'fa-solid fa-people-group'],
+        ['label' => 'Manajemem Pengguna', 'route' => 'users.index', 'active' => 'users.*', 'icon' => 'fa-solid fa-users'],
     ];
     $logoBps = \Illuminate\Support\Facades\Vite::asset('resources/img/logo-bps.png');
     $lautHero = \Illuminate\Support\Facades\Vite::asset('resources/img/laut-2.png');

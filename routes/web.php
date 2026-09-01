@@ -4,6 +4,7 @@ use App\Http\Controllers\ArchiveController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SopController;
+use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\UserManagementController;
 use Illuminate\Support\Facades\Route;
@@ -41,6 +42,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::prefix('archives')->name('archives.')->group(function () {
         Route::get('/', [ArchiveController::class, 'index'])->name('index');
+    });
+
+    Route::prefix('teams')->name('teams.')->group(function () {
+        Route::get('/', [TeamController::class, 'index'])->name('index');
+        Route::post('/', [TeamController::class, 'store'])->name('store');
+        Route::patch('/{team}', [TeamController::class, 'update'])->name('update');
+        Route::delete('/{team}', [TeamController::class, 'destroy'])->name('destroy');
     });
 
     Route::prefix('users')->name('users.')->group(function () {
