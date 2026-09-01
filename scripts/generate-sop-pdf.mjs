@@ -487,6 +487,24 @@ const drawPageTwo = () => {
     if (direction === 'left') doc.triangle(x, y, x + s, y - (s / 2), x + s, y + (s / 2), 'F');
   };
 
+  const drawBranchLabel = (label, x, y, side) => {
+    doc.setFontSize(7);
+    doc.setFont(boldFont, 'bold');
+    const textWidth = doc.getTextWidth(label) + 2.4;
+    const textHeight = 3.5;
+    const padX = 2.2;
+    const boxX = side === 'right' ? x + padX : x - textWidth - padX;
+    const boxY = y - (textHeight / 2) - 1;
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(40, 40, 40);
+    doc.setLineWidth(0.08);
+    doc.roundedRect(boxX, boxY, textWidth, textHeight, 0.6, 0.6, 'FD');
+    doc.setTextColor(0, 110, 50);
+    doc.text(label, boxX + (textWidth / 2), boxY + (textHeight / 2) + 0.2, { align: 'center', baseline: 'middle' });
+    doc.setTextColor(0, 0, 0);
+    doc.setFont(regularFont, 'normal');
+  };
+
   activities.forEach((activity, rowIndex) => {
     const nodes = Array.isArray(activity.flow_nodes) ? activity.flow_nodes : [];
 
@@ -524,8 +542,7 @@ const drawPageTwo = () => {
           const targetNode = targetMeta.node;
           const targetTop = ty - ((targetNode.type === 'decision') ? (size * diamondScale * 0.8) : (size / 2));
 
-          doc.setFontSize(6);
-          doc.text(branch.label, branch.side === 'right' ? startX + 1 : startX - 2, startY - 1.5);
+          drawBranchLabel(branch.label, startX, startY - 0.5, branch.side);
 
           if (from.page === to.page) {
             if (branch.targetIndex === rowIndex && branch.side === 'left') {
@@ -580,8 +597,7 @@ const drawPageTwo = () => {
             doc.line(sX, laneY, tx, laneY);
             doc.line(tx, laneY, tx, targetTopY);
             if (currentNode.type === 'decision') {
-              doc.setFontSize(6);
-              doc.text('Y', sX + 1, fy - 1.5);
+              drawBranchLabel('Y', sX, fy, 'right');
             }
             drawArrow(tx, targetTopY, 'down');
           } else {
@@ -589,8 +605,7 @@ const drawPageTwo = () => {
             const incomingOffset = (isTargetLastNode && rowIndex < activities.length - 1) ? -2 : 0;
             doc.line(sX, fy + incomingOffset, eX, ty + incomingOffset);
             if (currentNode.type === 'decision') {
-              doc.setFontSize(6);
-              doc.text('Y', sX + 1, (fy + incomingOffset) - 1.5);
+              drawBranchLabel('Y', sX, fy + incomingOffset, 'right');
             }
             drawArrow(eX, ty + incomingOffset, 'right');
           }
@@ -629,8 +644,7 @@ const drawPageTwo = () => {
       if (from.page === to.page) {
         doc.setPage(from.page);
         if (lastNode.type === 'decision' && !hasExplicitYesTarget) {
-          doc.setFontSize(6);
-          doc.text('Y', fx + 1, startYEdge + 2);
+          drawBranchLabel('Y', fx, startYEdge + 1, 'right');
         }
 
         if (hasExplicitYesTarget) {
