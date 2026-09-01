@@ -44,17 +44,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [ArchiveController::class, 'index'])->name('index');
     });
 
-    Route::prefix('teams')->name('teams.')->group(function () {
-        Route::get('/', [TeamController::class, 'index'])->name('index');
-        Route::post('/', [TeamController::class, 'store'])->name('store');
-        Route::patch('/{team}', [TeamController::class, 'update'])->name('update');
-        Route::delete('/{team}', [TeamController::class, 'destroy'])->name('destroy');
-    });
+    Route::middleware('admin')->group(function () {
+        Route::prefix('teams')->name('teams.')->group(function () {
+            Route::get('/', [TeamController::class, 'index'])->name('index');
+            Route::post('/', [TeamController::class, 'store'])->name('store');
+            Route::patch('/{team}', [TeamController::class, 'update'])->name('update');
+            Route::delete('/{team}', [TeamController::class, 'destroy'])->name('destroy');
+        });
 
-    Route::prefix('users')->name('users.')->group(function () {
-        Route::get('/', [UserManagementController::class, 'index'])->name('index');
-        Route::post('/', [UserManagementController::class, 'store'])->name('store');
-        Route::patch('/{user}', [UserManagementController::class, 'update'])->name('update');
+        Route::prefix('users')->name('users.')->group(function () {
+            Route::get('/', [UserManagementController::class, 'index'])->name('index');
+            Route::post('/', [UserManagementController::class, 'store'])->name('store');
+            Route::patch('/{user}', [UserManagementController::class, 'update'])->name('update');
+        });
     });
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

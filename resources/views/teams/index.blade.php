@@ -35,7 +35,7 @@
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.3em] text-blue-700">Kelola Tim</p>
                     <h3 class="mt-2 text-2xl font-bold text-slate-900">Daftar Tim Pengelola SOP</h3>
-                    <p class="mt-2 text-sm leading-6 text-slate-500">Kelola nama tim, keterangan, dan data tim pengelola dokumen SOP BPS Kabupaten Gorontalo Utara.</p>
+                    <p class="mt-2 text-sm leading-6 text-slate-500">Kelola nama tim, keterangan, dan status tim pengelola dokumen SOP BPS Kabupaten Gorontalo Utara.</p>
                 </div>
                 <div class="inline-flex rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-blue-700 backdrop-blur">
                     <i class="fa-solid fa-water mr-2"></i>
@@ -48,7 +48,6 @@
                     <thead class="bg-slate-50/90">
                         <tr>
                             <th class="px-5 py-4 text-left font-semibold text-slate-500">Nama Tim</th>
-                            <th class="px-5 py-4 text-left font-semibold text-slate-500">Kode</th>
                             <th class="px-5 py-4 text-left font-semibold text-slate-500">Pengguna</th>
                             <th class="px-5 py-4 text-left font-semibold text-slate-500">Kegiatan</th>
                             <th class="px-5 py-4 text-left font-semibold text-slate-500">SOP</th>
@@ -64,14 +63,6 @@
                                     @if ($team->description)
                                         <p class="mt-1 text-xs text-slate-500 line-clamp-1">{{ $team->description }}</p>
                                     @endif
-                                    @if ($team->leader_name)
-                                        <p class="mt-1 text-[11px] font-medium text-blue-600">
-                                            <i class="fa-solid fa-user-tie mr-1"></i>{{ $team->leader_name }}
-                                        </p>
-                                    @endif
-                                </td>
-                                <td class="px-5 py-4">
-                                    <code class="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">{{ $team->code }}</code>
                                 </td>
                                 <td class="px-5 py-4 text-slate-500">
                                     <span @class([
@@ -131,7 +122,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-5 py-14 text-center text-slate-500">
+                                <td colspan="6" class="px-5 py-14 text-center text-slate-500">
                                     <div class="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-blue-50 text-blue-500">
                                         <i class="fa-solid fa-water text-xl"></i>
                                     </div>
@@ -152,23 +143,9 @@
             <form method="POST" action="{{ route('teams.store') }}" class="mt-6 space-y-4">
                 @csrf
                 <div>
-                    <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.25em] text-slate-500" for="code">Kode Tim (slug)</label>
-                    <input id="code" name="code" value="{{ old('code') }}" placeholder="contoh: ipds, produksi, sosial" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100">
-                    @error('code')
-                        <p class="mt-2 text-xs font-medium text-rose-600">{{ $message }}</p>
-                    @enderror
-                </div>
-                <div>
-                    <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.25em] text-slate-500" for="name">Nama Internal</label>
-                    <input id="name" name="name" value="{{ old('name') }}" placeholder="contoh: ipds" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100">
-                    @error('name')
-                        <p class="mt-2 text-xs font-medium text-rose-600">{{ $message }}</p>
-                    @enderror
-                </div>
-                <div>
-                    <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.25em] text-slate-500" for="display_name">Nama Tampilan Tim</label>
+                    <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.25em] text-slate-500" for="display_name">Nama Tim</label>
                     <input id="display_name" name="display_name" value="{{ old('display_name') }}" placeholder="contoh: IPDS, Statistik Produksi" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100">
-                    <p class="mt-1.5 text-xs text-slate-400">Nama ini yang akan ditampilkan di halaman pemilihan tim (menu SOP).</p>
+                    <p class="mt-1.5 text-xs text-slate-400">Nama ini akan ditampilkan di halaman pemilihan tim (menu SOP).</p>
                     @error('display_name')
                         <p class="mt-2 text-xs font-medium text-rose-600">{{ $message }}</p>
                     @enderror
@@ -182,14 +159,14 @@
                 </div>
                 <div>
                     <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.25em] text-slate-500" for="description">Keterangan Tim</label>
-                    <textarea id="description" name="description" rows="3" placeholder="Deskripsikan ruang lingkup atau tujuan tim ini..." class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100">{{ old('description') }}</textarea>
+                    <textarea id="description" name="description" rows="4" placeholder="Deskripsikan ruang lingkup atau tujuan tim ini..." class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100">{{ old('description') }}</textarea>
                     @error('description')
                         <p class="mt-2 text-xs font-medium text-rose-600">{{ $message }}</p>
                     @enderror
                 </div>
                 <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                     <div>
-                        <p class="text-sm font-semibold text-slate-700">Tim Aktif</p>
+                        <p class="text-sm font-semibold text-slate-700">Status Tim Aktif</p>
                         <p class="text-xs text-slate-500">Nonaktifkan jika tim tidak lagi digunakan.</p>
                     </div>
                     <label class="relative inline-flex cursor-pointer items-center">
@@ -211,7 +188,7 @@
                 <div class="flex items-start justify-between gap-4">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-[0.3em] text-blue-700">Edit Tim</p>
-                        <h3 class="mt-2 text-xl font-bold text-slate-900">Ubah Data Tim {{ $team->display_name }}</h3>
+                        <h3 class="mt-2 text-xl font-bold text-slate-900">Ubah Data Tim</h3>
                     </div>
                     <button
                         type="button"
@@ -225,26 +202,10 @@
                 <form method="POST" action="{{ route('teams.update', $team) }}" class="mt-6 space-y-4">
                     @csrf
                     @method('PATCH')
-                    <div class="grid gap-4 sm:grid-cols-2">
-                        <div>
-                            <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.25em] text-slate-500" for="edit-code-{{ $team->id }}">Kode Tim (slug)</label>
-                            <input id="edit-code-{{ $team->id }}" name="code" value="{{ old('code', $team->code) }}" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100">
-                            @error('code')
-                                <p class="mt-2 text-xs font-medium text-rose-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-                        <div>
-                            <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.25em] text-slate-500" for="edit-name-{{ $team->id }}">Nama Internal</label>
-                            <input id="edit-name-{{ $team->id }}" name="name" value="{{ old('name', $team->name) }}" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100">
-                            @error('name')
-                                <p class="mt-2 text-xs font-medium text-rose-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    </div>
                     <div>
-                        <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.25em] text-slate-500" for="edit-display-name-{{ $team->id }}">Nama Tampilan Tim</label>
+                        <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.25em] text-slate-500" for="edit-display-name-{{ $team->id }}">Nama Tim</label>
                         <input id="edit-display-name-{{ $team->id }}" name="display_name" value="{{ old('display_name', $team->display_name) }}" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100">
-                        <p class="mt-1.5 text-xs text-slate-400">Nama ini yang akan ditampilkan di halaman pemilihan tim (menu SOP).</p>
+                        <p class="mt-1.5 text-xs text-slate-400">Nama ini akan ditampilkan di halaman pemilihan tim (menu SOP).</p>
                         @error('display_name')
                             <p class="mt-2 text-xs font-medium text-rose-600">{{ $message }}</p>
                         @enderror
@@ -258,14 +219,14 @@
                     </div>
                     <div>
                         <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.25em] text-slate-500" for="edit-description-{{ $team->id }}">Keterangan Tim</label>
-                        <textarea id="edit-description-{{ $team->id }}" name="description" rows="3" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100">{{ old('description', $team->description) }}</textarea>
+                        <textarea id="edit-description-{{ $team->id }}" name="description" rows="4" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100">{{ old('description', $team->description) }}</textarea>
                         @error('description')
                             <p class="mt-2 text-xs font-medium text-rose-600">{{ $message }}</p>
                         @enderror
                     </div>
                     <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                         <div>
-                            <p class="text-sm font-semibold text-slate-700">Tim Aktif</p>
+                            <p class="text-sm font-semibold text-slate-700">Status Tim Aktif</p>
                             <p class="text-xs text-slate-500">Nonaktifkan jika tim tidak lagi digunakan.</p>
                         </div>
                         <label class="relative inline-flex cursor-pointer items-center">

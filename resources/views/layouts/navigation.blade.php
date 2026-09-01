@@ -1,17 +1,19 @@
 @php
-    $navItems = [
-        ['label' => 'Dashboard', 'route' => 'dashboard', 'active' => 'dashboard', 'icon' => 'fa-solid fa-table-columns'],
-        ['label' => 'SOP', 'route' => 'sop.index', 'active' => 'sop.*', 'icon' => 'fa-solid fa-file-circle-plus'],
-        ['label' => 'Template', 'route' => 'templates.index', 'active' => 'templates.*', 'icon' => 'fa-regular fa-clone'],
-        ['label' => 'Arsip', 'route' => 'archives.index', 'active' => 'archives.*', 'icon' => 'fa-solid fa-box-archive'],
-        ['label' => 'Manajemen Tim', 'route' => 'teams.index', 'active' => 'teams.*', 'icon' => 'fa-solid fa-people-group'],
-        ['label' => 'Manajemem Pengguna', 'route' => 'users.index', 'active' => 'users.*', 'icon' => 'fa-solid fa-users'],
-    ];
+    $authUser = Auth::user();
     $logoBps = \Illuminate\Support\Facades\Vite::asset('resources/img/logo-bps.png');
     $lautHero = \Illuminate\Support\Facades\Vite::asset('resources/img/laut-2.png');
     $lautSidebar = \Illuminate\Support\Facades\Vite::asset('resources/img/laut-1.png');
     $todayLabel = \Carbon\Carbon::now()->translatedFormat('d F Y');
-    $authUser = Auth::user();
+
+    $allNavItems = [
+        ['label' => 'Dashboard', 'route' => 'dashboard', 'active' => 'dashboard', 'icon' => 'fa-solid fa-table-columns', 'admin_only' => false],
+        ['label' => 'SOP', 'route' => 'sop.index', 'active' => 'sop.*', 'icon' => 'fa-solid fa-file-circle-plus', 'admin_only' => false],
+        ['label' => 'Template', 'route' => 'templates.index', 'active' => 'templates.*', 'icon' => 'fa-regular fa-clone', 'admin_only' => false],
+        ['label' => 'Arsip', 'route' => 'archives.index', 'active' => 'archives.*', 'icon' => 'fa-solid fa-box-archive', 'admin_only' => false],
+        ['label' => 'Manajemen Tim', 'route' => 'teams.index', 'active' => 'teams.*', 'icon' => 'fa-solid fa-people-group', 'admin_only' => true],
+        ['label' => 'Manajemen Pengguna', 'route' => 'users.index', 'active' => 'users.*', 'icon' => 'fa-solid fa-users', 'admin_only' => true],
+    ];
+    $navItems = collect($allNavItems)->filter(fn($item) => !$item['admin_only'] || ($authUser?->role === 'admin'))->values()->all();
 @endphp
 
 <div class="lg:hidden">

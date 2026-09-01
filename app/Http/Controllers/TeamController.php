@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Team;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class TeamController extends Controller
@@ -22,8 +23,6 @@ class TeamController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'code' => ['required', 'string', 'max:50', 'unique:teams,code', 'alpha_dash'],
-            'name' => ['required', 'string', 'max:255'],
             'display_name' => ['required', 'string', 'max:255'],
             'leader_name' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
@@ -31,6 +30,8 @@ class TeamController extends Controller
         ]);
 
         $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['name'] = Str::slug($validated['display_name'], '_');
+        $validated['code'] = $this->generateUniqueCode($validated['display_name']);
 
         Team::create($validated);
 
@@ -40,8 +41,6 @@ class TeamController extends Controller
     public function update(Request $request, Team $team): RedirectResponse
     {
         $validated = $request->validate([
-            'code' => ['required', 'string', 'max:50', 'unique:teams,code,' . $team->id, 'alpha_dash'],
-            'name' => ['required', 'string', 'max:255'],
             'display_name' => ['required', 'string', 'max:255'],
             'leader_name' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
@@ -49,6 +48,11 @@ class TeamController extends Controller
         ]);
 
         $validated['is_active'] = $request->boolean('is_active', true);
+
+        if ($team->display_name !== $validated['display_name']) {
+            $validated['name'] = Str::slug($validated['display_name'], '_');
+            $validated['code'] = $this->generateUniqueCode($validated['display_name'], $team->id);
+        }
 
         $team->update($validated);
 
@@ -79,5 +83,25 @@ class TeamController extends Controller
         $team->delete();
 
         return back()->with('success', 'Tim berhasil dihapus.');
+    }
+
+    private function generateUniqueCode(string $displayName, ?int $ignoreId = null): string
+    {
+        $base = Str::slug($displayName);
+        $candidate = $base;
+        $counter = 2;
+
+        while (true) {
+            $query = Team::where('code', $candidate);
+            if ($ignoreId !== null) {
+                $query->where('id', '!=', $ignoreId);
+            }
+            if (! $query->exists()) {
+                break;
+            }
+            $candidate = $base . '-' . $counter++;
+        }
+
+        return $candidate;
     }
 }
