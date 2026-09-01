@@ -111,29 +111,32 @@
     </div>
 
     @if ($isAdmin)
-        <x-modal id="edit-activity-modal" :title="'Edit Kegiatan'">
-            <form id="edit-activity-form" method="POST" action="">
-                @csrf
-                @method('PATCH')
-                <div class="space-y-4">
-                    <div>
-                        <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.25em] text-slate-500" for="edit-name">Nama Kegiatan</label>
-                        <input id="edit-name" name="name" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100" placeholder="Nama kegiatan" required />
+        <x-modal name="edit-activity-modal" focusable>
+            <div class="p-6">
+                <h3 class="text-lg font-bold text-slate-900">Edit Kegiatan</h3>
+                <form id="edit-activity-form" method="POST" action="" class="mt-4">
+                    @csrf
+                    @method('PATCH')
+                    <div class="space-y-4">
+                        <div>
+                            <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.25em] text-slate-500" for="edit-name">Nama Kegiatan</label>
+                            <input id="edit-name" name="name" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100" placeholder="Nama kegiatan" required />
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.25em] text-slate-500" for="edit-description">Deskripsi</label>
+                            <textarea id="edit-description" name="description" class="min-h-32 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100" placeholder="Keterangan singkat kegiatan"></textarea>
+                        </div>
                     </div>
-                    <div>
-                        <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.25em] text-slate-500" for="edit-description">Deskripsi</label>
-                        <textarea id="edit-description" name="description" class="min-h-32 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100" placeholder="Keterangan singkat kegiatan"></textarea>
+                    <div class="mt-6 flex justify-end gap-3">
+                        <button type="button" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" x-on:click.prevent="$dispatch('close-modal', 'edit-activity-modal')">
+                            Batal
+                        </button>
+                        <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
+                            Simpan Perubahan
+                        </button>
                     </div>
-                </div>
-                <div class="mt-6 flex justify-end gap-3">
-                    <button type="button" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" data-modal-close="edit-activity-modal">
-                        Batal
-                    </button>
-                    <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
-                        Simpan Perubahan
-                    </button>
-                </div>
-            </form>
+                </form>
+            </div>
         </x-modal>
 
         <script>
@@ -142,24 +145,6 @@
                 const form = document.getElementById('edit-activity-form');
                 const nameInput = document.getElementById('edit-name');
                 const descInput = document.getElementById('edit-description');
-
-                const openModal = (modalId) => {
-                    const modal = document.getElementById(modalId);
-                    if (!modal) return;
-                    modal.classList.remove('hidden');
-                    modal.classList.add('flex');
-                };
-
-                const closeModal = (modalId) => {
-                    const modal = document.getElementById(modalId);
-                    if (!modal) return;
-                    modal.classList.add('hidden');
-                    modal.classList.remove('flex');
-                };
-
-                document.querySelectorAll('[data-modal-close]').forEach((btn) => {
-                    btn.addEventListener('click', () => closeModal(btn.dataset.modalClose));
-                });
 
                 editButtons.forEach((button) => {
                     button.addEventListener('click', () => {
@@ -172,14 +157,8 @@
                         nameInput.value = name;
                         descInput.value = description;
 
-                        openModal('edit-activity-modal');
+                        window.dispatchEvent(new CustomEvent('open-modal', { detail: 'edit-activity-modal' }));
                     });
-                });
-
-                document.getElementById('edit-activity-modal')?.addEventListener('click', (event) => {
-                    if (event.target.id === 'edit-activity-modal') {
-                        closeModal('edit-activity-modal');
-                    }
                 });
             });
         </script>
