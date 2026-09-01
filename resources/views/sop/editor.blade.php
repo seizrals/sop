@@ -430,6 +430,7 @@
 
             const normalizeExecutorKey = (value) => String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
             const splitLines = (value) => String(value || '').split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+            const splitLinesPreserveEmpty = (value) => String(value || '').split(/\r?\n/).map((line) => line.trim());
 
             const emptyActivity = () => ({
                 name: '',
@@ -590,7 +591,7 @@
                 }
 
                 const numbered = container.dataset.numbered === 'true';
-                const values = splitLines(hiddenField.value);
+                const values = splitLinesPreserveEmpty(hiddenField.value);
                 const rows = values.length ? values : [''];
 
                 container.innerHTML = rows.map((value, index) => `
@@ -607,7 +608,7 @@
 
                 container.querySelectorAll('[data-remove-list-item]').forEach((button) => {
                     button.addEventListener('click', () => {
-                        const nextValues = splitLines(hiddenField.value);
+                        const nextValues = splitLinesPreserveEmpty(hiddenField.value);
                         nextValues.splice(Number(button.dataset.removeIndex), 1);
                         hiddenField.value = nextValues.join('\n');
                         renderListEditor(fieldName);
@@ -1231,7 +1232,7 @@
                 button.addEventListener('click', () => {
                     const fieldName = button.dataset.listAdd;
                     const hiddenField = document.querySelector(`[name="${fieldName}"]`);
-                    const values = splitLines(hiddenField.value);
+                    const values = splitLinesPreserveEmpty(hiddenField.value).filter((v, i, arr) => !(i === arr.length - 1 && v === ''));
                     values.push('');
                     hiddenField.value = values.join('\n');
                     renderListEditor(fieldName);
