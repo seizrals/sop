@@ -488,19 +488,12 @@ const drawPageTwo = () => {
   };
 
   const drawBranchLabel = (label, x, y, side) => {
-    doc.setFontSize(7);
+    doc.setFontSize(9);
     doc.setFont(boldFont, 'bold');
-    const textWidth = doc.getTextWidth(label) + 2.4;
-    const textHeight = 3.5;
-    const padX = 2.2;
-    const boxX = side === 'right' ? x + padX : x - textWidth - padX;
-    const boxY = y - (textHeight / 2) - 1;
-    doc.setFillColor(255, 255, 255);
-    doc.setDrawColor(40, 40, 40);
-    doc.setLineWidth(0.08);
-    doc.roundedRect(boxX, boxY, textWidth, textHeight, 0.6, 0.6, 'FD');
-    doc.setTextColor(0, 110, 50);
-    doc.text(label, boxX + (textWidth / 2), boxY + (textHeight / 2) + 0.2, { align: 'center', baseline: 'middle' });
+    const offsetX = side === 'right' ? 4.2 : -5.2;
+    const offsetY = -2.2;
+    doc.setTextColor(0, 90, 170);
+    doc.text(label, x + offsetX, y + offsetY, { align: 'center', baseline: 'middle' });
     doc.setTextColor(0, 0, 0);
     doc.setFont(regularFont, 'normal');
   };
