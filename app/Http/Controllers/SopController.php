@@ -412,8 +412,8 @@ class SopController extends Controller
             'revision_date' => null,
             'effective_date' => null,
             'approval_position' => 'Kepala Badan Pusat Statistik Kabupaten Gorontalo Utara',
-            'approval_name' => '',
-            'approval_nip' => '',
+            'approval_name' => 'Depit Rudianto, SST, M.Ec.Dev.',
+            'approval_nip' => '198606302009121003',
             'legal_basis' => [
                 'Peraturan Presiden No. 86 Tahun 2007 tentang Badan Pusat Statistik.',
             ],
