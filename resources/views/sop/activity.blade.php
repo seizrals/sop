@@ -159,7 +159,7 @@
                                                 </svg>
                                             </a>
                                             @if ($document['status'] !== 'final' || $isAdmin)
-                                                <form method="POST" action="{{ route('sop.destroy', $document['model']) }}" class="inline" onsubmit="{{ $document['status'] === 'final' ? 'return confirm(\'Anda yakin menghapus SOP FINAL? Tindakan ini tidak dapat dibatalkan.\')' : '' }}">
+                                                <form method="POST" action="{{ route('sop.destroy', $document['model']) }}" class="inline" @if ($document['status'] === 'final') data-delete-confirm data-delete-title="Hapus SOP FINAL" data-delete-message="Anda yakin menghapus SOP FINAL? Tindakan ini tidak dapat dibatalkan." @endif>
                                                     @csrf
                                                     @method('DELETE')
                                                     <button class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border {{ $document['status'] === 'final' ? 'border-red-400 bg-red-100 text-red-800' : 'border-red-200 bg-red-50 text-red-700' }} transition hover:bg-red-100" type="submit" title="{{ $document['status'] === 'final' ? 'Hapus SOP Final (Admin Only)' : 'Hapus SOP' }}">
@@ -254,7 +254,7 @@
                                                                                 </svg>
                                                                             </a>
                                                                             @if (($historyItem['status'] ?? 'draft') !== 'final' || $isAdmin)
-                                                                                <form method="POST" action="{{ route('sop.destroy', $historyItem['model']) }}" class="inline" onsubmit="{{ ($historyItem['status'] ?? 'draft') === 'final' ? 'return confirm(\'Anda yakin menghapus SOP FINAL? Tindakan ini tidak dapat dibatalkan.\')' : '' }}">
+                                                                                <form method="POST" action="{{ route('sop.destroy', $historyItem['model']) }}" class="inline" @if (($historyItem['status'] ?? 'draft') === 'final') data-delete-confirm data-delete-title="Hapus SOP FINAL" data-delete-message="Anda yakin menghapus SOP FINAL? Tindakan ini tidak dapat dibatalkan." @endif>
                                                                                     @csrf
                                                                                     @method('DELETE')
                                                                                     <button class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border {{ ($historyItem['status'] ?? 'draft') === 'final' ? 'border-red-400 bg-red-100 text-red-800' : 'border-red-200 bg-red-50 text-red-700' }} transition hover:bg-red-100" type="submit" title="{{ ($historyItem['status'] ?? 'draft') === 'final' ? 'Hapus SOP Final (Admin Only)' : 'Hapus SOP' }}">

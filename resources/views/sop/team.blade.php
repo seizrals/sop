@@ -67,7 +67,7 @@
                                                         <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"></path>
                                                     </svg>
                                                 </button>
-                                                <form method="POST" action="{{ route('sop.activity.destroy', [$team, $activity['model']]) }}" class="inline" onsubmit="return confirm('Anda yakin menghapus kegiatan ini? Seluruh SOP di dalamnya juga akan ikut terhapus.')">
+                                                <form method="POST" action="{{ route('sop.activity.destroy', [$team, $activity['model']]) }}" class="inline" data-delete-confirm data-delete-title="Hapus Kegiatan" data-delete-message="Anda yakin menghapus kegiatan ini? Seluruh SOP di dalamnya juga akan ikut terhapus.">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button class="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100" type="submit" title="Hapus Kegiatan (Admin Only)">

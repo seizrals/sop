@@ -51,7 +51,7 @@
                                 <td class="px-5 py-4 text-slate-500">{{ $template->sourceSop?->title ?? '-' }}</td>
                                 <td class="px-5 py-4 text-right">
                                     <div class="flex justify-end gap-2">
-                                        <form method="POST" action="{{ route('templates.destroy', $template) }}" onsubmit="return confirm('Anda yakin menghapus template ini?')">
+                                        <form method="POST" action="{{ route('templates.destroy', $template) }}" data-delete-confirm data-delete-title="Hapus Template SOP" data-delete-message="Anda yakin menghapus template ini?">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="inline-flex items-center justify-center rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100">Hapus</button>

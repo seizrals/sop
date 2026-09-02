@@ -106,7 +106,7 @@
                                             <i class="fa-solid fa-pen-to-square"></i>
                                             Edit
                                         </button>
-                                        <form method="POST" action="{{ route('teams.destroy', $team) }}" onsubmit="return confirm('Yakin ingin menghapus tim {{ $team->display_name }}? Data yang sudah terhubung (pengguna, kegiatan, SOP) akan mencegah penghapusan.');">
+                                        <form method="POST" action="{{ route('teams.destroy', $team) }}" data-delete-confirm data-delete-title="Hapus Tim" data-delete-message="Yakin ingin menghapus tim {{ $team->display_name }}? Data yang sudah terhubung (pengguna, kegiatan, SOP) akan mencegah penghapusan.">
                                             @csrf
                                             @method('DELETE')
                                             <button

@@ -45,5 +45,7 @@
                 </main>
             </div>
         </div>
+
+        <x-confirm-delete-modal />
     </body>
 </html>
