@@ -32,24 +32,24 @@
                 </div>
                 <div class="flex-1 min-w-0">
                     <h2 class="text-xl font-bold text-slate-900">
-                        {{ __('Are you sure you want to delete your account?') }}
+                        Anda yakin ingin menghapus akun ini?
                     </h2>
 
                     <p class="mt-2 text-sm leading-6 text-slate-600">
-                        {{ __('Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.') }}
+                        Setelah akun dihapus, seluruh data dan sumber daya akun ini akan terhapus secara permanen. Silakan masukkan kata sandi Anda untuk mengonfirmasi penghapusan akun secara permanen.
                     </p>
                 </div>
             </div>
 
             <div class="mt-6">
-                <label for="password" class="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{{ __('Password') }}</label>
+                <label for="password" class="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Kata Sandi</label>
 
                 <input
                     id="password"
                     name="password"
                     type="password"
                     class="mt-1 block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-rose-400 focus:ring-4 focus:ring-rose-100"
-                    placeholder="{{ __('Password') }}"
+                    placeholder="Masukkan kata sandi"
                 />
 
                 <x-input-error :messages="$errors->userDeletion->get('password')" class="mt-2 text-xs text-rose-600" />
@@ -61,11 +61,11 @@
                     x-on:click="$dispatch('close-modal', 'confirm-user-deletion')"
                     class="inline-flex w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 sm:w-auto"
                 >
-                    {{ __('Cancel') }}
+                    Batal
                 </button>
 
                 <button type="submit" class="inline-flex w-full items-center justify-center rounded-2xl bg-rose-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_30px_-12px_rgba(220,38,38,0.6)] transition hover:bg-rose-700 focus:outline-none focus:ring-4 focus:ring-rose-100 sm:w-auto">
-                    {{ __('Delete Account') }}
+                    Hapus Akun
                 </button>
             </div>
         </form>

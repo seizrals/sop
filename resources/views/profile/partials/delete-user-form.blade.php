@@ -2,17 +2,17 @@
     <header>
         <p class="text-xs font-semibold uppercase tracking-[0.3em] text-rose-600">Zona Berisiko</p>
         <h2 class="mt-2 text-2xl font-bold text-slate-900">
-            {{ __('Delete Account') }}
+            Hapus Akun
         </h2>
 
         <p class="mt-2 text-sm leading-6 text-slate-500">
-            {{ __('Once your account is deleted, all of its resources and data will be permanently deleted. Before deleting your account, please download any data or information that you wish to retain.') }}
+            Setelah akun Anda dihapus, seluruh sumber dan data yang terkait akan terhapus secara permanen. Sebelum menghapus akun, silakan unduh data atau informasi apa pun yang ingin Anda simpan.
         </p>
     </header>
 
     <div class="rounded-[28px] border border-rose-200 bg-rose-50/80 p-5">
         <p class="text-sm leading-6 text-rose-700">
-            Gunakan aksi ini hanya jika benar-benar diperlukan. Penghapusan akun bersifat permanen dan akan menghapus data terkait akun ini.
+            Gunakan aksi ini hanya jika benar-benar diperlukan. Penghapusan akun bersifat permanen dan akan menghapus seluruh data terkait akun ini.
         </p>
 
         <button
