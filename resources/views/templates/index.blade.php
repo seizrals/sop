@@ -1,13 +1,5 @@
 @extends('layouts.app')
 
-@php
-    $previewTemplates = collect([
-        ['name' => 'Template Statistik Air Bersih', 'template_code' => 'TPL-AIR-BERSIH', 'team' => 'Produksi', 'activity' => 'Air Bersih Tahunan', 'source' => 'SOP Statistik Air Bersih Tahunan'],
-        ['name' => 'Template Sakernas Semesteran', 'template_code' => 'TPL-SAKERNAS', 'team' => 'Social', 'activity' => 'Sakernas', 'source' => 'SOP Pengolahan Sakernas'],
-        ['name' => 'Template Metadata Publikasi', 'template_code' => 'TPL-META', 'team' => 'IPDS', 'activity' => 'Metadata Publikasi', 'source' => 'SOP Validasi Metadata'],
-    ]);
-@endphp
-
 @section('content')
     <div class="space-y-6">
         <section class="overflow-hidden rounded-[32px] border border-white/70 bg-white/85 p-6 shadow-[0_30px_80px_-35px_rgba(15,23,42,0.24)] backdrop-blur">
@@ -46,22 +38,43 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
-                        @foreach ($previewTemplates as $template)
+                        @forelse ($templates as $template)
                             <tr class="hover:bg-slate-50/70">
                                 <td class="px-5 py-4">
-                                    <p class="font-semibold text-slate-800">{{ $template['name'] }}</p>
-                                    <p class="mt-1 text-xs text-slate-500">{{ $template['template_code'] }}</p>
+                                    <p class="font-semibold text-slate-800">{{ $template->name }}</p>
+                                    @if ($template->template_code)
+                                        <p class="mt-1 text-xs text-slate-500">{{ $template->template_code }}</p>
+                                    @endif
                                 </td>
-                                <td class="px-5 py-4 text-slate-500">{{ $template['team'] }}</td>
-                                <td class="px-5 py-4 text-slate-500">{{ $template['activity'] }}</td>
-                                <td class="px-5 py-4 text-slate-500">{{ $template['source'] }}</td>
+                                <td class="px-5 py-4 text-slate-500">{{ $template->team?->display_name ?? '-' }}</td>
+                                <td class="px-5 py-4 text-slate-500">{{ $template->activity?->name ?? '-' }}</td>
+                                <td class="px-5 py-4 text-slate-500">{{ $template->sourceSop?->title ?? '-' }}</td>
                                 <td class="px-5 py-4 text-right">
                                     <div class="flex justify-end gap-2">
-                                        <button type="button" class="inline-flex items-center justify-center rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">Hapus</button>
+                                        <form method="POST" action="{{ route('templates.destroy', $template) }}" onsubmit="return confirm('Anda yakin menghapus template ini?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="inline-flex items-center justify-center rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100">Hapus</button>
+                                        </form>
                                     </div>
                                 </td>
                             </tr>
-                        @endforeach
+                        @empty
+                            <tr>
+                                <td colspan="5" class="px-5 py-16 text-center">
+                                    <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-[28px] border border-slate-200 bg-slate-50 text-slate-400">
+                                        <svg viewBox="0 0 24 24" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path>
+                                            <path d="M14 2v6h6"></path>
+                                            <path d="M9 13h6"></path>
+                                            <path d="M9 17h6"></path>
+                                        </svg>
+                                    </div>
+                                    <p class="mt-4 text-base font-semibold text-slate-800">Belum ada template SOP</p>
+                                    <p class="mt-1 text-sm text-slate-500">Template baru akan muncul secara otomatis ketika pengguna menyimpan template dari editor SOP.</p>
+                                </td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
