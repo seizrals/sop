@@ -58,6 +58,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/', [UserManagementController::class, 'index'])->name('index');
             Route::post('/', [UserManagementController::class, 'store'])->name('store');
             Route::patch('/{user}', [UserManagementController::class, 'update'])->name('update');
+            Route::delete('/{user}', [UserManagementController::class, 'destroy'])->name('destroy');
         });
     });
 

@@ -59,4 +59,22 @@ class UserManagementController extends Controller
 
         return back()->with('success', 'Pengguna berhasil diperbarui.');
     }
+
+    public function destroy(User $user): RedirectResponse
+    {
+        if ($user->id === auth()->id()) {
+            return back()->with('error', 'Anda tidak dapat menghapus akun sendiri.');
+        }
+
+        try {
+            $user->delete();
+        } catch (\Illuminate\Database\QueryException $e) {
+            if (str_contains($e->getMessage(), '1451') || str_contains($e->getMessage(), 'foreign key')) {
+                return back()->with('error', 'Pengguna tidak dapat dihapus karena masih memiliki data SOP yang terkait.');
+            }
+            throw $e;
+        }
+
+        return back()->with('success', 'Pengguna berhasil dihapus.');
+    }
 }
