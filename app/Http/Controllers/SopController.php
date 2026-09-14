@@ -249,6 +249,21 @@ class SopController extends Controller
         return redirect()->route('sop.team', $team)->with('success', 'Kegiatan dan seluruh SOP-nya berhasil dihapus.');
     }
 
+    private function buildPdfFileName(SopDocument $document): string
+    {
+        $title = trim($document->title ?: 'sop');
+        $titleForFile = preg_replace('/[\\\\\/:*?"<>|]/', '', $title);
+
+        if ($document->sop_number) {
+            $sopForFile = str_replace('/', '.', $document->sop_number);
+            $fileName = trim($sopForFile . ' - ' . $titleForFile, ' -');
+        } else {
+            $fileName = $titleForFile;
+        }
+
+        return rtrim($fileName, ' .-') . '.pdf';
+    }
+
     public function download(SopDocument $document)
     {
         $document->load(['team', 'activity']);
@@ -259,7 +274,7 @@ class SopController extends Controller
         );
 
         return response()
-            ->download($filePath, ($document->sop_number ?: Str::slug($document->title)) . '.pdf')
+            ->download($filePath, $this->buildPdfFileName($document))
             ->deleteFileAfterSend(true);
     }
 
@@ -275,7 +290,7 @@ class SopController extends Controller
         return response()
             ->file($filePath, [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="' . (($document->sop_number ?: Str::slug($document->title)) . '.pdf') . '"',
+                'Content-Disposition' => 'inline; filename="' . $this->buildPdfFileName($document) . '"',
             ]);
     }
 
@@ -293,7 +308,7 @@ class SopController extends Controller
         );
 
         return response()
-            ->download($filePath, ($document->sop_number ?: Str::slug($document->title ?: 'preview-sop')) . '.pdf')
+            ->download($filePath, $this->buildPdfFileName($document) ?: 'preview-sop.pdf')
             ->deleteFileAfterSend(true);
     }
 
