@@ -35,6 +35,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/document/{document}/download', [SopController::class, 'download'])->name('download');
         Route::get('/document/{document}/preview', [SopController::class, 'preview'])->name('preview');
         Route::post('/document/{document}/save-template', [SopController::class, 'saveTemplate'])->name('save-template');
+        Route::post('/document/{document}/upload-signed', [SopController::class, 'uploadSigned'])->name('upload-signed');
+        Route::get('/document/{document}/signed-preview', [SopController::class, 'signedPreview'])->name('signed-preview');
+        Route::get('/document/{document}/signed-download', [SopController::class, 'signedDownload'])->name('signed-download');
+        Route::delete('/document/{document}/signed-delete', [SopController::class, 'signedDelete'])->name('signed-delete');
     });
 
     Route::prefix('templates')->name('templates.')->group(function () {

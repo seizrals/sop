@@ -113,12 +113,12 @@
         <section class="overflow-hidden rounded-[32px] border border-white/70 bg-white/85 p-6 shadow-[0_30px_80px_-35px_rgba(15,23,42,0.24)] backdrop-blur">
             <p class="text-xs font-semibold uppercase tracking-[0.3em] text-blue-700">Arsip SOP</p>
             <h3 class="mt-2 text-2xl font-bold text-slate-900">Arsip seluruh dokumen SOP</h3>
-            <p class="mt-2 text-sm leading-6 text-slate-500">Arsip menampilkan dokumen SOP final, sementara kolom riwayat tetap menyimpan versi draft dan revisi yang terkait dalam satu rantai dokumen.</p>
+            <p class="mt-2 text-sm leading-6 text-slate-500">Arsip hanya menampilkan dokumen SOP yang sudah disahkan (sudah ditandatangani kepala dan diunggah). Dokumen yang diunduh dan dilihat adalah versi final yang sudah bertanda tangan.</p>
 
             @if ($finalGroups->isEmpty())
                 <div class="mt-6 rounded-[28px] border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
                     <h4 class="text-lg font-bold text-slate-900">Belum ada arsip dokumen</h4>
-                    <p class="mt-2 text-sm leading-6 text-slate-500">Dokumen akan tampil di arsip setelah memiliki versi final, dan riwayat draft maupun revisinya tetap tersimpan pada detail riwayat.</p>
+                    <p class="mt-2 text-sm leading-6 text-slate-500">Dokumen akan tampil di arsip setelah SOP difinalisasi dan diunggah dokumen sahnya (yang sudah ditandatangani kepala) melalui menu Daftar SOP.</p>
                 </div>
             @else
                 <div class="mt-6 overflow-hidden rounded-[28px] border border-slate-200 bg-white">
@@ -149,13 +149,13 @@
                                     <td class="px-5 py-4 text-slate-600">{{ $formatFinalDate($latest['model']) }}</td>
                                     <td class="px-5 py-4 text-center">
                                         <div class="inline-flex items-center justify-center gap-2">
-                                            <a href="{{ route('sop.preview', $latest['model']) }}" target="_blank" class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-sky-200 bg-sky-50 text-sky-700 transition hover:bg-sky-100" title="Lihat PDF">
+                                            <a href="{{ route('sop.signed-preview', $latest['model']) }}" target="_blank" class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-sky-200 bg-sky-50 text-sky-700 transition hover:bg-sky-100" title="Lihat PDF (versi disahkan)">
                                                 <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                                     <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"></path>
                                                     <circle cx="12" cy="12" r="3"></circle>
                                                 </svg>
                                             </a>
-                                            <a href="{{ route('sop.download', $latest['model']) }}" class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-700 transition hover:bg-emerald-100" title="Unduh PDF">
+                                            <a href="{{ route('sop.signed-download', $latest['model']) }}" class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-700 transition hover:bg-emerald-100" title="Unduh PDF (versi disahkan)">
                                                 <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                                     <path d="M12 3v12"></path>
                                                     <path d="m7 10 5 5 5-5"></path>
@@ -212,19 +212,23 @@
                                                                 <td class="px-4 py-3 text-slate-600">{{ $formatFinalDate($historyRow['model']) }}</td>
                                                                 <td class="px-4 py-3 text-center">
                                                                     <div class="inline-flex items-center justify-center gap-2">
-                                                                        <a href="{{ route('sop.preview', $historyRow['model']) }}" target="_blank" class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-sky-200 bg-sky-50 text-sky-700 transition hover:bg-sky-100" title="Lihat PDF">
-                                                                            <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                                                                <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"></path>
-                                                                                <circle cx="12" cy="12" r="3"></circle>
-                                                                            </svg>
-                                                                        </a>
-                                                                        <a href="{{ route('sop.download', $historyRow['model']) }}" class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-700 transition hover:bg-emerald-100" title="Unduh PDF">
-                                                                            <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                                                                <path d="M12 3v12"></path>
-                                                                                <path d="m7 10 5 5 5-5"></path>
-                                                                                <path d="M4 21h16"></path>
-                                                                            </svg>
-                                                                        </a>
+                                                                        @if (filled($historyRow['model']->signed_file_path))
+                                                                            <a href="{{ route('sop.signed-preview', $historyRow['model']) }}" target="_blank" class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-sky-200 bg-sky-50 text-sky-700 transition hover:bg-sky-100" title="Lihat PDF (versi disahkan)">
+                                                                                <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                                                                    <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"></path>
+                                                                                    <circle cx="12" cy="12" r="3"></circle>
+                                                                                </svg>
+                                                                            </a>
+                                                                            <a href="{{ route('sop.signed-download', $historyRow['model']) }}" class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-700 transition hover:bg-emerald-100" title="Unduh PDF (versi disahkan)">
+                                                                                <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                                                                    <path d="M12 3v12"></path>
+                                                                                    <path d="m7 10 5 5 5-5"></path>
+                                                                                    <path d="M4 21h16"></path>
+                                                                                </svg>
+                                                                            </a>
+                                                                        @else
+                                                                            <span class="text-xs text-slate-400">Belum disahkan</span>
+                                                                        @endif
                                                                     </div>
                                                                 </td>
                                                             </tr>

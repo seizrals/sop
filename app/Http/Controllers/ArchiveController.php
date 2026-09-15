@@ -26,6 +26,7 @@ class ArchiveController extends Controller
             'selectedActivity' => $activityId,
             'selectedYear' => $year,
             'documents' => SopDocument::with(['team', 'activity', 'creator'])
+                ->whereNotNull('signed_file_path')
                 ->when($teamId, fn ($query) => $query->where('team_id', $teamId))
                 ->when($activityId, fn ($query) => $query->where('team_activity_id', $activityId))
                 ->when($year, fn ($query) => $query->where('year', $year))

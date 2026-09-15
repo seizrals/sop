@@ -36,6 +36,9 @@ class SopDocument extends Model
         'executors',
         'activities',
         'notes',
+        'signed_file_path',
+        'signed_file_name',
+        'signed_at',
     ];
 
     protected function casts(): array
@@ -46,6 +49,7 @@ class SopDocument extends Model
             'creation_date' => 'date',
             'revision_date' => 'date',
             'effective_date' => 'date',
+            'signed_at' => 'datetime',
             'legal_basis' => 'array',
             'executor_qualifications' => 'array',
             'related_documents' => 'array',

@@ -332,6 +332,95 @@ class SopController extends Controller
         return back()->with('success', 'Template SOP berhasil disimpan.');
     }
 
+    public function uploadSigned(Request $request, SopDocument $document): RedirectResponse
+    {
+        $validated = $request->validate([
+            'signed_file' => ['required', 'file', 'mimes:pdf', 'max:20480'],
+        ]);
+
+        if ($document->status !== 'final') {
+            return back()->with('error', 'Hanya SOP berstatus FINAL yang dapat diunggah dokumen sahnya.');
+        }
+
+        $file = $validated['signed_file'];
+        $originalName = $file->getClientOriginalName();
+
+        $directory = 'sop-signed';
+        $storedPath = $file->store($directory, 'public');
+
+        if ($document->signed_file_path) {
+            $oldPath = storage_path('app/public/' . $document->signed_file_path);
+            if (file_exists($oldPath)) {
+                @unlink($oldPath);
+            }
+        }
+
+        $document->update([
+            'signed_file_path' => $storedPath,
+            'signed_file_name' => $originalName,
+            'signed_at' => now(),
+        ]);
+
+        return back()->with('success', 'Dokumen SOP yang disahkan berhasil diunggah.');
+    }
+
+    public function signedPreview(SopDocument $document)
+    {
+        if (! $document->signed_file_path) {
+            abort(404, 'Dokumen SOP yang disahkan belum tersedia.');
+        }
+
+        $fullPath = storage_path('app/public/' . $document->signed_file_path);
+
+        if (! file_exists($fullPath)) {
+            abort(404, 'Berkas dokumen SOP yang disahkan tidak ditemukan.');
+        }
+
+        $displayName = $document->signed_file_name ?: $this->buildPdfFileName($document);
+
+        return response()->file($fullPath, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $displayName . '"',
+        ]);
+    }
+
+    public function signedDownload(SopDocument $document)
+    {
+        if (! $document->signed_file_path) {
+            abort(404, 'Dokumen SOP yang disahkan belum tersedia.');
+        }
+
+        $fullPath = storage_path('app/public/' . $document->signed_file_path);
+
+        if (! file_exists($fullPath)) {
+            abort(404, 'Berkas dokumen SOP yang disahkan tidak ditemukan.');
+        }
+
+        $displayName = $document->signed_file_name ?: $this->buildPdfFileName($document);
+
+        return response()->download($fullPath, $displayName);
+    }
+
+    public function signedDelete(SopDocument $document): RedirectResponse
+    {
+        if (! $document->signed_file_path) {
+            return back()->with('error', 'Dokumen SOP yang disahkan tidak ada.');
+        }
+
+        $fullPath = storage_path('app/public/' . $document->signed_file_path);
+        if (file_exists($fullPath)) {
+            @unlink($fullPath);
+        }
+
+        $document->update([
+            'signed_file_path' => null,
+            'signed_file_name' => null,
+            'signed_at' => null,
+        ]);
+
+        return back()->with('success', 'Dokumen SOP yang disahkan berhasil dihapus.');
+    }
+
     private function editorView(
         SopDocument $document,
         Team $team,
