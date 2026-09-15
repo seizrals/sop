@@ -94,20 +94,64 @@ class SopController extends Controller
         ]);
     }
 
-    public function activity(Team $team, TeamActivity $activity): View
+    public function activity(Request $request, Team $team, TeamActivity $activity): View
     {
         abort_unless((int) $activity->team_id === (int) $team->id, 404);
+
+        $search = trim((string) $request->query('q', ''));
+
+        $query = SopDocument::with(['creator', 'updater', 'rootDocument'])
+            ->where('team_id', $team->id)
+            ->where('team_activity_id', $activity->id)
+            ->when(filled($search), function ($query) use ($search) {
+                $query->where(function ($subQuery) use ($search) {
+                    $subQuery->where('title', 'like', '%' . $search . '%')
+                        ->orWhere('sop_number', 'like', '%' . $search . '%')
+                        ->orWhere('notes', 'like', '%' . $search . '%')
+                        ->orWhere('year', (string) $search);
+                });
+            })
+            ->orderByDesc('year')
+            ->orderByDesc('revision_number');
+
+        $documents = $query->get();
+        $paginatedGroupKeys = $documents
+            ->pluck('root_document_id')
+            ->push(...$documents->whereNull('root_document_id')->pluck('id'))
+            ->filter()
+            ->unique()
+            ->values();
+
+        $page = (int) $request->query('page', 1);
+        $perPage = 5;
+        $offset = ($page - 1) * $perPage;
+        $paginated = $paginatedGroupKeys->slice($offset, $perPage)->values();
+        $totalGroups = $paginatedGroupKeys->count();
+
+        $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+            $paginated,
+            $totalGroups,
+            $perPage,
+            $page,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
+
+        $visibleDocuments = $documents->filter(function (SopDocument $document) use ($paginated) {
+            $rootKey = $document->root_document_id ?: $document->id;
+
+            return $paginated->contains($rootKey);
+        });
 
         return view('sop.activity', [
             'pageTitle' => 'SOP',
             'team' => $team,
             'activity' => $activity,
-            'documents' => SopDocument::with(['creator', 'rootDocument'])
-                ->where('team_id', $team->id)
-                ->where('team_activity_id', $activity->id)
-                ->orderByDesc('year')
-                ->orderByDesc('revision_number')
-                ->get(),
+            'search' => $search,
+            'documents' => $visibleDocuments,
+            'groups' => $paginator,
             'templates' => SopTemplate::where('team_id', $team->id)
                 ->where(function ($query) use ($activity) {
                     $query->whereNull('team_activity_id')
@@ -186,6 +230,14 @@ class SopController extends Controller
     {
         $document->load(['team', 'activity']);
 
+        if ($document->status !== 'final') {
+            return back()->with('error', 'Hanya SOP berstatus FINAL yang dapat dibuat revisinya.');
+        }
+
+        if (! filled($document->signed_file_path)) {
+            return back()->with('error', 'Revisi hanya bisa dilakukan jika SOP sudah diunggah dokumen sahnya (sudah ditandatangani kepala). Silakan unggah dokumen disahkan terlebih dahulu.');
+        }
+
         $newDocument = $document->replicate();
         $newDocument->parent_document_id = $document->id;
         $newDocument->root_document_id = $document->root_document_id ?: $document->id;
@@ -195,11 +247,14 @@ class SopController extends Controller
         $newDocument->revision_date = now()->toDateString();
         $newDocument->created_by_id = $this->defaultUserId();
         $newDocument->updated_by_id = $this->defaultUserId();
+        $newDocument->signed_file_path = null;
+        $newDocument->signed_file_name = null;
+        $newDocument->signed_at = null;
         $newDocument->push();
 
         return redirect()
             ->route('sop.edit', $newDocument)
-            ->with('success', 'Draft revisi berhasil dibuat.');
+            ->with('success', 'Draft revisi berhasil dibuat. Unggah kembali dokumen sahnya setelah revisi difinalisasi.');
     }
 
     public function destroy(SopDocument $document): RedirectResponse
@@ -455,6 +510,19 @@ class SopController extends Controller
         TeamActivity $activity
     ): RedirectResponse {
         $validated = $request->validate($this->documentValidationRules());
+
+        $user = auth()->user();
+        $role = $user?->role;
+        $isAllowedFinalize = in_array($role, ['admin', 'ketua_tim'], true)
+            || ($role === 'ketua_tim' && (int) ($user?->team_id) === (int) $team->id);
+
+        $statusAction = $validated['status_action'] ?? 'draft';
+        if ($statusAction === 'final' && ! $isAllowedFinalize) {
+            return back()
+                ->withInput()
+                ->with('error', 'Finalisasi SOP hanya dapat dilakukan oleh Ketua Tim atau Admin. Silakan hubungi ketua tim untuk memeriksa dan menyetujui SOP ini.');
+        }
+
         $this->fillDocumentFromValidated($document, $validated, $team, $activity);
 
         $document->save();

@@ -3,11 +3,17 @@
 @php
     $authUser = Auth::user();
     $isAdmin = $authUser?->role === 'admin';
-    $statusClass = [
-        'draft' => 'border-slate-200 bg-slate-50 text-slate-700',
-        'revisi' => 'border-amber-200 bg-amber-50 text-amber-700',
-        'final' => 'border-emerald-200 bg-emerald-50 text-emerald-700',
-        'simpan' => 'border-slate-200 bg-slate-50 text-slate-700',
+    $statusDotClass = [
+        'draft' => 'bg-slate-400',
+        'revisi' => 'bg-amber-500',
+        'final' => 'bg-emerald-500',
+        'simpan' => 'bg-slate-400',
+    ];
+    $statusLabelClass = [
+        'draft' => 'text-slate-600',
+        'revisi' => 'text-amber-700',
+        'final' => 'text-emerald-700',
+        'simpan' => 'text-slate-600',
     ];
 
     $normalizedDocuments = $documents->map(function ($document) {
@@ -16,6 +22,7 @@
         $status = $document->status === 'simpan' ? 'draft' : $document->status;
         $rootKey = $document->root_document_id ?: $document->id;
         $updatedAt = $document->updated_at?->timestamp ?? $document->created_at?->timestamp ?? 0;
+        $updaterName = $document->updater?->name ?? $document->creator?->name ?? '-';
 
         return [
             'root_key' => $rootKey,
@@ -27,6 +34,7 @@
             'revision_number' => $document->revision_number,
             'short_title' => \Illuminate\Support\Str::limit($document->title, 56),
             'updated_at' => $updatedAt,
+            'updater_name' => $updaterName,
         ];
     });
 
@@ -48,16 +56,48 @@
     <div class="space-y-6">
         <section class="overflow-hidden rounded-[32px] border border-white/70 bg-white/85 p-6 shadow-[0_30px_80px_-35px_rgba(15,23,42,0.24)] backdrop-blur">
             <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                <div>
+                <div class="flex-1">
                     <p class="text-xs font-semibold uppercase tracking-[0.3em] text-blue-700">{{ $team->display_name }} / {{ $activity->name }}</p>
                     <h3 class="mt-2 text-2xl font-bold text-slate-900">Daftar SOP</h3>
                     <p class="mt-2 text-sm leading-6 text-slate-500">Kelola SOP untuk kegiatan ini, lanjutkan draft yang masih dikerjakan, unduh dokumen, atau buat revisi baru saat diperlukan.</p>
                 </div>
-                <div class="flex flex-wrap gap-3">
+                <div class="flex flex-wrap items-center gap-3 xl:justify-end">
+                    <form method="GET" action="{{ route('sop.activity', [$team, $activity]) }}" class="w-full sm:min-w-[320px] xl:w-auto">
+                        <div class="relative">
+                            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                                <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+                            </div>
+                            <input
+                                id="sop-search"
+                                type="search"
+                                name="q"
+                                value="{{ e($search) }}"
+                                placeholder="Cari nama, nomor, tahun, atau catatan SOP..."
+                                class="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-12 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                            >
+                            @if (filled($search))
+                                <a href="{{ route('sop.activity', [$team, $activity]) }}" class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 transition hover:text-slate-600" title="Bersihkan pencarian">
+                                    <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+                                </a>
+                            @endif
+                        </div>
+                    </form>
                     <a href="{{ route('sop.team', $team) }}" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">Kembali ke Kegiatan</a>
                     <a href="{{ route('sop.create', [$team, $activity]) }}" class="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">Buat SOP</a>
                 </div>
             </div>
+
+            @if (filled($search))
+                <div class="mt-6 inline-flex items-center gap-2 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-800">
+                    <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+                    Hasil pencarian: <span class="font-bold">"{{ e($search) }}"</span>
+                    @if ($groupedDocuments->isEmpty())
+                        <span class="text-blue-600">— tidak ditemukan SOP yang sesuai.</span>
+                    @else
+                        <span class="text-blue-600">— {{ $groups->total() }} kelompok ditemukan.</span>
+                    @endif
+                </div>
+            @endif
 
             @if ($groupedDocuments->isEmpty())
                 <div class="mt-6 rounded-[28px] border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
@@ -73,7 +113,7 @@
                         <thead class="bg-slate-50/90">
                             <tr>
                                 <th class="px-5 py-4 text-left font-semibold text-slate-500">Nama SOP</th>
-                                <th class="px-5 py-4 text-left font-semibold text-slate-500">Nomor SOP</th>
+                                <th class="px-5 py-4 text-left font-semibold text-slate-500">Terakhir Diperbarui Oleh</th>
                                 <th class="px-5 py-4 text-left font-semibold text-slate-500">Tahun</th>
                                 <th class="px-5 py-4 text-left font-semibold text-slate-500">Status</th>
                                 <th class="px-5 py-4 text-center font-semibold text-slate-500">Revisi</th>
@@ -106,26 +146,49 @@
                                                 @endif
                                             </div>
                                             <p class="mt-3 text-base font-bold leading-7 text-slate-900">{{ $document['title'] }}</p>
-                                            <p class="mt-1 text-sm leading-6 text-slate-500">{{ $document['short_title'] !== $document['title'] ? $document['short_title'] : 'Dokumen SOP untuk kegiatan ' . $activity->name }}</p>
+                                            <p class="mt-1 text-sm font-medium leading-6 text-slate-500">{{ $document['sop_number'] }}</p>
                                         </div>
                                         @if ($document['status'] === 'final' && $document['revision_number'] > 0)
                                             <p class="mt-2 inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">Revisi ke-{{ $document['revision_number'] }}</p>
                                         @endif
                                     </td>
-                                    <td class="px-5 py-4 text-slate-500">{{ $document['sop_number'] }}</td>
+                                    <td class="px-5 py-4 text-slate-700">
+                                        <div class="flex items-center gap-2">
+                                            <div class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-[11px] font-semibold text-slate-600">
+                                                {{ str($document['updater_name'])->trim()->explode(' ')->filter()->take(2)->map(fn ($p) => str($p)->substr(0, 1)->upper())->implode('') ?: '-' }}
+                                            </div>
+                                            <span class="text-sm leading-5">{{ $document['updater_name'] }}</span>
+                                        </div>
+                                    </td>
                                     <td class="px-5 py-4 text-slate-500">{{ $document['year'] }}</td>
                                     <td class="px-5 py-4">
-                                        <span class="inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] {{ $statusClass[$document['status']] ?? 'border-slate-200 bg-slate-50 text-slate-700' }}">
-                                            {{ strtoupper($document['status']) }}
-                                        </span>
+                                        <div class="inline-flex items-center gap-2">
+                                            <span class="inline-block h-2.5 w-2.5 rounded-full {{ $statusDotClass[$document['status']] ?? 'bg-slate-400' }}"></span>
+                                            <span class="text-xs font-semibold uppercase tracking-[0.2em] {{ $statusLabelClass[$document['status']] ?? 'text-slate-600' }}">
+                                                {{ strtoupper($document['status']) }}
+                                            </span>
+                                        </div>
                                     </td>
                                     <td class="px-5 py-4 text-center">
                                         @if ($document['status'] === 'final')
-                                            <form method="POST" action="{{ route('sop.revise', $document['model']) }}" class="inline">
-                                                @csrf
-                                                <input type="hidden" name="revision_year" value="{{ now()->year }}">
-                                                <button class="inline-flex items-center justify-center rounded-2xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100" type="submit">Revisi</button>
-                                            </form>
+                                            @if (filled($document['model']->signed_file_path))
+                                                <form method="POST" action="{{ route('sop.revise', $document['model']) }}" class="inline">
+                                                    @csrf
+                                                    <input type="hidden" name="revision_year" value="{{ now()->year }}">
+                                                    <button class="inline-flex items-center justify-center rounded-2xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100" type="submit" title="Buat revisi dari SOP yang sudah disahkan">Revisi</button>
+                                                </form>
+                                            @else
+                                                <div class="group relative inline-block">
+                                                    <span class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-400" title="Revisi hanya bisa dilakukan jika SOP sudah diunggah dokumen sahnya">
+                                                        <svg viewBox="0 0 24 24" class="mr-1.5 h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>
+                                                        Revisi
+                                                    </span>
+                                                    <span class="pointer-events-none absolute bottom-full right-0 z-30 mb-3 w-[28rem] max-w-[32rem] whitespace-normal rounded-2xl border border-slate-800 bg-slate-900 px-5 py-3 text-left text-xs font-semibold leading-6 text-white opacity-0 shadow-[0_20px_45px_-15px_rgba(15,23,42,0.6)] transition-opacity duration-150 group-hover:opacity-100">
+                                                        Revisi hanya bisa dilakukan jika SOP sudah diunggah dokumen sahnya (sudah ditandatangani kepala). Unggah terlebih dahulu pada kolom Disahkan.
+                                                        <span class="absolute -bottom-1 right-10 h-3 w-3 rotate-45 border-b border-r border-slate-800 bg-slate-900"></span>
+                                                    </span>
+                                                </div>
+                                            @endif
                                         @else
                                             <span class="text-sm text-slate-400">-</span>
                                         @endif
@@ -262,7 +325,7 @@
                                                         <thead class="bg-slate-50/90">
                                                             <tr>
                                                                 <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Versi</th>
-                                                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Nomor SOP</th>
+                                                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Terakhir Diperbarui Oleh</th>
                                                                 <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Tahun</th>
                                                                 <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Status</th>
                                                                 <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Revisi</th>
@@ -274,26 +337,52 @@
                                                             @foreach ($history as $historyItem)
                                                                 <tr class="hover:bg-slate-50/70">
                                                                     <td class="px-4 py-3 text-slate-700">
-                                                                        @if (($historyItem['revision_number'] ?? 0) > 0)
-                                                                            Revisi ke-{{ $historyItem['revision_number'] }}
-                                                                        @else
-                                                                            Versi awal
-                                                                        @endif
+                                                                        <div>
+                                                                            @if (($historyItem['revision_number'] ?? 0) > 0)
+                                                                                <p class="text-sm font-semibold">Revisi ke-{{ $historyItem['revision_number'] }}</p>
+                                                                            @else
+                                                                                <p class="text-sm font-semibold">Versi awal</p>
+                                                                            @endif
+                                                                            <p class="mt-1 text-xs font-medium text-slate-500">{{ $historyItem['sop_number'] }}</p>
+                                                                        </div>
                                                                     </td>
-                                                                    <td class="px-4 py-3 text-slate-500">{{ $historyItem['sop_number'] }}</td>
+                                                                    <td class="px-4 py-3 text-slate-700">
+                                                                        <div class="flex items-center gap-2">
+                                                                            <div class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
+                                                                                {{ str($historyItem['updater_name'] ?? '-')->trim()->explode(' ')->filter()->take(2)->map(fn ($p) => str($p)->substr(0, 1)->upper())->implode('') ?: '-' }}
+                                                                            </div>
+                                                                            <span class="text-xs leading-5">{{ $historyItem['updater_name'] ?? '-' }}</span>
+                                                                        </div>
+                                                                    </td>
                                                                     <td class="px-4 py-3 text-slate-500">{{ $historyItem['year'] }}</td>
                                                                     <td class="px-4 py-3">
-                                                                        <span class="inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] {{ $statusClass[$historyItem['status']] ?? 'border-slate-200 bg-slate-50 text-slate-700' }}">
-                                                                            {{ strtoupper($historyItem['status']) }}
-                                                                        </span>
+                                                                        <div class="inline-flex items-center gap-2">
+                                                                            <span class="inline-block h-2 w-2 rounded-full {{ $statusDotClass[$historyItem['status']] ?? 'bg-slate-400' }}"></span>
+                                                                            <span class="text-[11px] font-semibold uppercase tracking-[0.18em] {{ $statusLabelClass[$historyItem['status']] ?? 'text-slate-600' }}">
+                                                                                {{ strtoupper($historyItem['status']) }}
+                                                                            </span>
+                                                                        </div>
                                                                     </td>
                                                                     <td class="px-4 py-3 text-center">
                                                                         @if (($historyItem['status'] ?? 'draft') === 'final')
-                                                                            <form method="POST" action="{{ route('sop.revise', $historyItem['model']) }}" class="inline">
-                                                                                @csrf
-                                                                                <input type="hidden" name="revision_year" value="{{ now()->year }}">
-                                                                                <button class="inline-flex items-center justify-center rounded-2xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100" type="submit">Revisi</button>
-                                                                            </form>
+                                                                            @if (filled($historyItem['model']->signed_file_path))
+                                                                                <form method="POST" action="{{ route('sop.revise', $historyItem['model']) }}" class="inline">
+                                                                                    @csrf
+                                                                                    <input type="hidden" name="revision_year" value="{{ now()->year }}">
+                                                                                    <button class="inline-flex items-center justify-center rounded-2xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100" type="submit" title="Buat revisi dari SOP yang sudah disahkan">Revisi</button>
+                                                                                </form>
+                                                                            @else
+                                                                                <div class="group relative inline-block">
+                                                                                    <span class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-400" title="Revisi hanya bisa dilakukan jika SOP sudah diunggah dokumen sahnya">
+                                                                                        <svg viewBox="0 0 24 24" class="mr-1 h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>
+                                                                                        Revisi
+                                                                                    </span>
+                                                                                    <span class="pointer-events-none absolute bottom-full right-0 z-30 mb-3 w-[26rem] max-w-[28rem] whitespace-normal rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-left text-[11px] font-semibold leading-5 text-white opacity-0 shadow-[0_20px_45px_-15px_rgba(15,23,42,0.6)] transition-opacity duration-150 group-hover:opacity-100">
+                                                                                        Revisi hanya bisa dilakukan jika SOP sudah diunggah dokumen sahnya (sudah ditandatangani kepala). Unggah terlebih dahulu pada kolom Disahkan.
+                                                                                        <span class="absolute -bottom-1 right-10 h-2.5 w-2.5 rotate-45 border-b border-r border-slate-800 bg-slate-900"></span>
+                                                                                    </span>
+                                                                                </div>
+                                                                            @endif
                                                                         @else
                                                                             <span class="text-sm text-slate-400">-</span>
                                                                         @endif
@@ -429,6 +518,23 @@
                         </tbody>
                     </table>
                 </div>
+
+                @if (isset($groups) && $groups->hasPages())
+                    <div class="mt-6 flex flex-col items-start justify-between gap-4 border-t border-slate-100 px-5 py-5 sm:flex-row sm:items-center">
+                        <p class="text-xs font-semibold leading-5 text-slate-500">
+                            Menampilkan
+                            <span class="font-bold text-slate-800">{{ $groups->firstItem() }}</span>
+                            sampai
+                            <span class="font-bold text-slate-800">{{ $groups->lastItem() }}</span>
+                            dari
+                            <span class="font-bold text-slate-800">{{ $groups->total() }}</span>
+                            kelompok SOP.
+                        </p>
+                        <div>
+                            {{ $groups->onEachSide(1)->links('pagination::tailwind') }}
+                        </div>
+                    </div>
+                @endif
             @endif
         </section>
     </div>
