@@ -513,7 +513,7 @@ class SopController extends Controller
 
         $user = auth()->user();
         $role = $user?->role;
-        $isAllowedFinalize = in_array($role, ['admin', 'ketua_tim'], true)
+        $isAllowedFinalize = $role === 'admin'
             || ($role === 'ketua_tim' && (int) ($user?->team_id) === (int) $team->id);
 
         $statusAction = $validated['status_action'] ?? 'draft';

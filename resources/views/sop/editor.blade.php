@@ -3,6 +3,10 @@
 @php
     $isEdit = filled($document->id);
     $logoBps = \Illuminate\Support\Facades\Vite::asset('resources/img/logo-bps.png');
+    $editorAuthUser = Auth::user();
+    $editorIsAdmin = $editorAuthUser?->role === 'admin';
+    $editorIsKetuaTim = $editorAuthUser?->role === 'ketua_tim' && isset($team) && (int) ($editorAuthUser?->team_id) === (int) $team->id;
+    $editorCanFinalize = $editorIsAdmin || $editorIsKetuaTim;
     $statusLabel = [
         'draft' => 'Draft',
         'revisi' => 'Revisi',
@@ -351,7 +355,20 @@
                 <button type="button" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" data-submit-status="{{ $document->status === 'revisi' ? 'revisi' : 'draft' }}">
                     {{ $document->status === 'revisi' ? 'Simpan Revisi' : 'Simpan Draft' }}
                 </button>
-                <button type="button" class="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800" data-submit-status="final">Finalisasi</button>
+                @if ($editorCanFinalize)
+                    <button type="button" class="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800" data-submit-status="final">Finalisasi</button>
+                @else
+                    <div class="group relative inline-block">
+                        <span class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-400" title="Finalisasi hanya dapat dilakukan oleh Ketua Tim atau Admin">
+                            <svg viewBox="0 0 24 24" class="mr-2 h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            Finalisasi
+                        </span>
+                        <span class="pointer-events-none absolute bottom-full left-0 z-30 mb-3 w-[24rem] max-w-[26rem] whitespace-normal rounded-2xl border border-slate-800 bg-slate-900 px-5 py-3 text-left text-xs font-semibold leading-6 text-white opacity-0 shadow-[0_20px_45px_-15px_rgba(15,23,42,0.6)] transition-opacity duration-150 group-hover:opacity-100">
+                            Finalisasi SOP hanya dapat dilakukan oleh <strong>Ketua Tim</strong> atau <strong>Admin</strong>. Silakan hubungi ketua tim untuk memeriksa dan menyetujui SOP ini agar bisa diproses ke tahap Final.
+                            <span class="absolute -bottom-1 left-10 h-3 w-3 rotate-45 border-b border-r border-slate-800 bg-slate-900"></span>
+                        </span>
+                    </div>
+                @endif
             </div>
         </section>
     </form>

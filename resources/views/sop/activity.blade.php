@@ -61,8 +61,8 @@
                     <h3 class="mt-2 text-2xl font-bold text-slate-900">Daftar SOP</h3>
                     <p class="mt-2 text-sm leading-6 text-slate-500">Kelola SOP untuk kegiatan ini, lanjutkan draft yang masih dikerjakan, unduh dokumen, atau buat revisi baru saat diperlukan.</p>
                 </div>
-                <div class="flex flex-wrap items-center gap-3 xl:justify-end">
-                    <form method="GET" action="{{ route('sop.activity', [$team, $activity]) }}" class="w-full sm:min-w-[320px] xl:w-auto">
+                <div class="flex flex-wrap items-center justify-end gap-3">
+                    <form method="GET" action="{{ route('sop.activity', [$team, $activity]) }}" class="flex-1 min-w-[280px] sm:min-w-[340px] max-w-md">
                         <div class="relative">
                             <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
                                 <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
@@ -357,8 +357,8 @@
                                                                     <td class="px-4 py-3 text-slate-500">{{ $historyItem['year'] }}</td>
                                                                     <td class="px-4 py-3">
                                                                         <div class="inline-flex items-center gap-2">
-                                                                            <span class="inline-block h-2 w-2 rounded-full {{ $statusDotClass[$historyItem['status']] ?? 'bg-slate-400' }}"></span>
-                                                                            <span class="text-[11px] font-semibold uppercase tracking-[0.18em] {{ $statusLabelClass[$historyItem['status']] ?? 'text-slate-600' }}">
+                                                                            <span class="inline-block h-2.5 w-2.5 rounded-full {{ $statusDotClass[$historyItem['status']] ?? 'bg-slate-400' }}"></span>
+                                                                            <span class="text-xs font-semibold uppercase tracking-[0.2em] {{ $statusLabelClass[$historyItem['status']] ?? 'text-slate-600' }}">
                                                                                 {{ strtoupper($historyItem['status']) }}
                                                                             </span>
                                                                         </div>
@@ -445,17 +445,17 @@
                                                                         @else
                                                                             <button
                                                                                 type="button"
-                                                                                class="inline-flex items-center justify-center gap-1 rounded-xl border border-violet-300 bg-violet-50 px-2.5 py-1.5 text-xs font-semibold text-violet-700 transition hover:border-violet-400 hover:bg-violet-100"
+                                                                                class="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-violet-300 bg-violet-50 px-3 py-2 text-sm font-semibold text-violet-700 transition hover:border-violet-400 hover:bg-violet-100"
                                                                                 data-open-upload
                                                                                 data-document-id="{{ $historyItem['model']->id }}"
                                                                                 data-document-title="{{ $historyItem['title'] }}"
                                                                             >
-                                                                                <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                                                                <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                                                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                                                                     <path d="M17 8l-5-5-5 5"></path>
                                                                                     <path d="M12 3v12"></path>
                                                                                 </svg>
-                                                                                Unggah
+                                                                                Unggah Dokumen
                                                                             </button>
                                                                         @endif
                                                                     </td>

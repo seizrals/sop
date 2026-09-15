@@ -44,6 +44,13 @@
         ['label' => 'Final', 'value' => $resolvedStatusCounts->get('final', $previewStatusCounts['final'])],
     ];
 
+    $dashboardStatusDotClass = [
+        'draft' => 'bg-slate-400',
+        'revisi' => 'bg-amber-500',
+        'final' => 'bg-emerald-500',
+        'simpan' => 'bg-slate-400',
+    ];
+
     $archiveMap = $resolvedArchives->keyBy('year');
     $currentYear = now()->year;
     $archiveSeries = collect(range($currentYear - 4, $currentYear))
@@ -163,11 +170,12 @@
                                     <p class="mt-1 text-sm text-slate-500">{{ $document['team'] }} - {{ $document['activity'] }}</p>
                                 </div>
                                 <span @class([
-                                    'rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em]',
+                                    'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em]',
                                     'bg-emerald-100 text-emerald-700' => $document['status'] === 'final',
                                     'bg-amber-100 text-amber-700' => $document['status'] === 'revisi',
                                     'bg-slate-900 text-white' => ! in_array($document['status'], ['final', 'revisi']),
                                 ])>
+                                    <span class="inline-block h-2 w-2 rounded-full {{ $dashboardStatusDotClass[$document['status']] ?? 'bg-slate-400' }}"></span>
                                     {{ strtoupper($document['status']) }}
                                 </span>
                             </div>
