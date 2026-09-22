@@ -38,9 +38,9 @@
                     <table class="w-full table-fixed divide-y divide-slate-200 text-sm">
                         <thead class="bg-slate-50/90">
                             <tr>
-                                <th class="w-[50%] px-5 py-4 text-left font-semibold text-slate-500">Kegiatan</th>
-                                <th class="w-[20%] px-5 py-4 text-center font-semibold text-slate-500">Jumlah SOP</th>
-                                <th class="w-[30%] px-5 py-4 text-center font-semibold text-slate-500">Aksi</th>
+                                <th class="w-[41%] px-5 py-4 text-left font-semibold text-slate-500">Kegiatan</th>
+                                <th class="w-[41%] px-5 py-4 text-center font-semibold text-slate-500">Jumlah SOP</th>
+                                <th class="w-[18%] px-5 py-4 text-center font-semibold text-slate-500">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 bg-white">
