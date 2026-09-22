@@ -35,12 +35,12 @@
                 </div>
             @else
                 <div class="mt-6 overflow-hidden rounded-[28px] border border-slate-200">
-                    <table class="min-w-full divide-y divide-slate-200 text-sm">
+                    <table class="w-full table-fixed divide-y divide-slate-200 text-sm">
                         <thead class="bg-slate-50/90">
                             <tr>
-                                <th class="px-5 py-4 text-left font-semibold text-slate-500">Kegiatan</th>
-                                <th class="px-5 py-4 text-left font-semibold text-slate-500">Jumlah SOP</th>
-                                <th class="px-5 py-4 text-right font-semibold text-slate-500">Aksi</th>
+                                <th class="w-[50%] px-5 py-4 text-left font-semibold text-slate-500">Kegiatan</th>
+                                <th class="w-[20%] px-5 py-4 text-center font-semibold text-slate-500">Jumlah SOP</th>
+                                <th class="w-[30%] px-5 py-4 text-center font-semibold text-slate-500">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 bg-white">
@@ -54,9 +54,9 @@
                                             @endif
                                         </div>
                                     </td>
-                                    <td class="px-5 py-4 text-slate-500">{{ $activity['sop_documents_count'] }}</td>
+                                    <td class="px-5 py-4 text-center font-semibold text-slate-600">{{ $activity['sop_documents_count'] }}</td>
                                     <td class="px-5 py-4">
-                                        <div class="flex flex-wrap justify-end gap-2">
+                                        <div class="flex flex-wrap justify-center gap-2">
                                             <a href="{{ route('sop.activity', [$team, $activity['model']]) }}" class="inline-flex items-center justify-center rounded-2xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100">
                                                 Masuk
                                             </a>
