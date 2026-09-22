@@ -36,11 +36,16 @@
             @else
                 <div class="mt-6 overflow-hidden rounded-[28px] border border-slate-200">
                     <table class="w-full table-fixed divide-y divide-slate-200 text-sm">
+                        <colgroup>
+                            <col class="w-[calc((100%-240px)/2)]">
+                            <col class="w-[calc((100%-240px)/2)]">
+                            <col class="w-[240px]">
+                        </colgroup>
                         <thead class="bg-slate-50/90">
                             <tr>
-                                <th class="w-[41%] px-5 py-4 text-left font-semibold text-slate-500">Kegiatan</th>
-                                <th class="w-[41%] px-5 py-4 text-center font-semibold text-slate-500">Jumlah SOP</th>
-                                <th class="w-[18%] px-5 py-4 text-center font-semibold text-slate-500">Aksi</th>
+                                <th class="px-5 py-4 text-left font-semibold text-slate-500">Kegiatan</th>
+                                <th class="px-5 py-4 text-center font-semibold text-slate-500">Jumlah SOP</th>
+                                <th class="px-5 py-4 text-center font-semibold text-slate-500">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 bg-white">
