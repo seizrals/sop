@@ -15,6 +15,55 @@ class ArchiveController extends Controller
         $teamId = $request->integer('team');
         $activityId = $request->integer('activity');
         $year = $request->integer('year');
+        $search = trim((string) $request->query('q', ''));
+
+        $query = SopDocument::with(['team', 'activity', 'creator', 'updater'])
+            ->whereNotNull('signed_file_path')
+            ->when($teamId, fn ($query) => $query->where('team_id', $teamId))
+            ->when($activityId, fn ($query) => $query->where('team_activity_id', $activityId))
+            ->when($year, fn ($query) => $query->where('year', $year))
+            ->when(filled($search), function ($query) use ($search) {
+                $query->where(function ($subQuery) use ($search) {
+                    $subQuery->where('title', 'like', '%' . $search . '%')
+                        ->orWhere('sop_number', 'like', '%' . $search . '%')
+                        ->orWhere('notes', 'like', '%' . $search . '%')
+                        ->orWhere('year', (string) $search);
+                });
+            })
+            ->orderByDesc('year')
+            ->orderBy('title')
+            ->orderByDesc('revision_number');
+
+        $page = (int) $request->query('page', 1);
+        $perPage = 10;
+
+        $allDocuments = $query->get();
+
+        $groupKeys = $allDocuments
+            ->map(fn ($doc) => $doc->root_document_id ?: $doc->id)
+            ->filter()
+            ->unique()
+            ->values();
+
+        $offset = ($page - 1) * $perPage;
+        $paginatedKeys = $groupKeys->slice($offset, $perPage)->values();
+        $totalGroups = $groupKeys->count();
+
+        $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+            $paginatedKeys,
+            $totalGroups,
+            $perPage,
+            $page,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
+
+        $visibleDocuments = $allDocuments->filter(function (SopDocument $document) use ($paginatedKeys) {
+            $rootKey = $document->root_document_id ?: $document->id;
+            return $paginatedKeys->contains($rootKey);
+        });
 
         return view('archives.index', [
             'pageTitle' => 'Arsip Dokumen SOP',
@@ -25,15 +74,9 @@ class ArchiveController extends Controller
             'selectedTeam' => $teamId,
             'selectedActivity' => $activityId,
             'selectedYear' => $year,
-            'documents' => SopDocument::with(['team', 'activity', 'creator'])
-                ->whereNotNull('signed_file_path')
-                ->when($teamId, fn ($query) => $query->where('team_id', $teamId))
-                ->when($activityId, fn ($query) => $query->where('team_activity_id', $activityId))
-                ->when($year, fn ($query) => $query->where('year', $year))
-                ->orderByDesc('year')
-                ->orderBy('title')
-                ->orderByDesc('revision_number')
-                ->get(),
+            'search' => $search,
+            'documents' => $visibleDocuments,
+            'groups' => $paginator,
         ]);
     }
 }

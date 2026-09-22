@@ -41,9 +41,27 @@
     $groupedDocuments = $normalizedDocuments
         ->groupBy('root_key')
         ->map(function ($items) {
-            return $items
+            $sorted = $items
                 ->sortByDesc(fn ($item) => ($item['revision_number'] ?? 0) * 10000000000 + ($item['updated_at'] ?? 0))
                 ->values();
+
+            $first = $sorted->first();
+            $firstStatus = $first['status'] ?? 'draft';
+            $firstHasSigned = filled(data_get($first, 'model.signed_file_path'));
+
+            $isLatestActiveDraft = ! ($firstStatus === 'final' && $firstHasSigned);
+
+            $history = $sorted->slice(1);
+
+            if ($isLatestActiveDraft) {
+                $history = $history->filter(function ($hItem) {
+                    $hStatus = $hItem['status'] ?? 'draft';
+                    $hSigned = filled(data_get($hItem, 'model.signed_file_path'));
+                    return $hStatus === 'final' && $hSigned;
+                })->values();
+            }
+
+            return collect([$first])->concat($history)->values();
         })
         ->sortByDesc(function ($items) {
             $first = $items->first();
@@ -286,7 +304,7 @@
                                 </tr>
                                 @if ($history->isNotEmpty())
                                     <tr id="{{ $historyId }}" class="hidden bg-slate-50/50">
-                                        <td colspan="7" class="px-5 py-4">
+                                        <td colspan="6" class="px-5 py-4">
                                             <div class="rounded-[20px] border border-slate-200 bg-white p-4">
                                                 <div class="flex items-center justify-between gap-3">
                                                     <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Riwayat SOP</p>
@@ -300,7 +318,6 @@
                                                                 <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Terakhir Diperbarui Oleh</th>
                                                                 <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Tahun</th>
                                                                 <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Status</th>
-                                                                <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Revisi</th>
                                                                 <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Disahkan</th>
                                                                 <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Aksi</th>
                                                             </tr>
@@ -334,22 +351,6 @@
                                                                                 {{ strtoupper($historyItem['status']) }}
                                                                             </span>
                                                                         </div>
-                                                                    </td>
-                                                                    <td class="px-4 py-3 text-center">
-                                                                        @if (($historyItem['status'] ?? 'draft') === 'final')
-                                                                            <div class="group relative inline-block">
-                                                                                <span class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-400" title="Hanya SOP versi terbaru yang dapat direvisi">
-                                                                                    <svg viewBox="0 0 24 24" class="mr-1 h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>
-                                                                                    Revisi
-                                                                                </span>
-                                                                                <span class="pointer-events-none absolute bottom-full right-0 z-30 mb-3 w-[24rem] max-w-[26rem] whitespace-normal rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-left text-[11px] font-semibold leading-5 text-white opacity-0 shadow-[0_20px_45px_-15px_rgba(15,23,42,0.6)] transition-opacity duration-150 group-hover:opacity-100">
-                                                                                    Hanya SOP versi terbaru (yang ada di daftar utama yang dapat dibuat revisi baru. SOP pada riwayat ini adalah versi lama.
-                                                                                    <span class="absolute -bottom-1 right-10 h-2.5 w-2.5 rotate-45 border-b border-r border-slate-800 bg-slate-900"></span>
-                                                                                </span>
-                                                                            </div>
-                                                                        @else
-                                                                            <span class="text-sm text-slate-400">-</span>
-                                                                        @endif
                                                                     </td>
                                                                     <td class="px-4 py-3 text-center">
                                                                         @php
