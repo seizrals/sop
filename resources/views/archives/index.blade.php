@@ -1,85 +1,15 @@
 @extends('layouts.app')
 
 @php
-    $archiveRows = $documents
-        ->map(function ($document) {
-            preg_match('/(\d{4})(?!.*\d)/', (string) $document->sop_number, $matches);
-            $displayYear = $matches[1] ?? $document->year;
-
-            $updaterName = $document->updater?->name ?? $document->creator?->name ?? '-';
-
-            return [
-                'model' => $document,
-                'title' => $document->title,
-                'team' => $document->team?->display_name ?: '-',
-                'activity' => $document->activity?->name ?: '-',
-                'year' => $displayYear ?: '-',
-                'status' => $document->status,
-                'revision' => $document->status === 'revisi' ? ($document->revision_number ?: 1) : '-',
-                'group_key' => $document->root_document_id ?: $document->id,
-                'updater_name' => $updaterName,
-                'sop_number' => $document->sop_number ?: '-',
-            ];
-        });
-
-    $sopGroups = $archiveRows
-        ->groupBy('group_key')
-        ->map(function ($versions) {
-            $sorted = $versions->sortByDesc(function ($document) {
-                return [
-                    $document['status'] === 'revisi' ? 2 : 1,
-                    (int) ($document['model']->revision_number ?? 0),
-                    $document['model']->updated_at?->timestamp ?? 0,
-                    $document['model']->id,
-                ];
-            })->values();
-
-            return [
-                'latest' => $sorted->first(),
-                'history' => $sorted->slice(1)->values(),
-            ];
-        })
-        ->sortBy(function ($group) {
-            $latest = $group['latest'] ?? [];
-            return strtolower(($latest['activity'] ?? '-') . '|' . ($latest['title'] ?? '-'));
-        })
-        ->values();
-
-    $finalGroups = $sopGroups
-        ->map(function ($group) {
-            $latest = $group['latest'];
-            $history = $group['history'];
-
-            if (($latest['status'] ?? null) === 'final') {
-                return [
-                    'latest' => $latest,
-                    'history' => $history,
-                ];
-            }
-
-            $historyFinal = $history->firstWhere('status', 'final');
-
-            if (! $historyFinal) {
-                return null;
-            }
-
-            return [
-                'latest' => $historyFinal,
-                'history' => $history
-                    ->reject(fn ($row) => (int) $row['model']->id === (int) $historyFinal['model']->id)
-                    ->values(),
-            ];
-        })
-        ->filter()
-        ->values();
+    $groups = $groups ?? collect();
+    $search = $search ?? '';
+    $totalCount = $totalCount ?? $groups->count();
 
     $formatFinalDate = function ($model) {
         $date = $model?->updated_at;
-
         if (! $date) {
             return '-';
         }
-
         return $date->timezone(config('app.timezone'))->format('d/m/Y');
     };
 @endphp
@@ -87,8 +17,8 @@
 @section('content')
     <div class="space-y-6">
         <section class="overflow-hidden rounded-[32px] border border-white/70 bg-white/85 p-6 shadow-[0_30px_80px_-35px_rgba(15,23,42,0.24)] backdrop-blur">
-            <form method="GET" action="{{ route('archives.index') }}" class="grid gap-4 lg:grid-cols-5">
-                <div class="lg:col-span-2">
+            <form method="GET" class="grid gap-4 lg:grid-cols-4">
+                <div>
                     <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.25em] text-slate-500" for="q">Pencarian</label>
                     <div class="relative">
                         <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
@@ -96,14 +26,14 @@
                         </div>
                         <input
                             id="q"
-                            type="search"
                             name="q"
+                            type="search"
                             value="{{ e($search) }}"
-                            placeholder="Cari nama, nomor, tahun, atau catatan SOP..."
+                            placeholder="Cari nama SOP, nomor, tim, kegiatan, tahun..."
                             class="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-12 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
                         >
                         @if (filled($search))
-                            <a href="{{ route('archives.index') }}" class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 transition hover:text-slate-600" title="Bersihkan pencarian">
+                            <a href="{{ route('archives.index') }}?{{ http_build_query(['team' => $selectedTeam, 'activity' => $selectedActivity, 'year' => $selectedYear]) }}" class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 transition hover:text-slate-600" title="Bersihkan pencarian">
                                 <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
                             </a>
                         @endif
@@ -127,28 +57,32 @@
                         @endforeach
                     </select>
                 </div>
-                <button class="inline-flex self-end items-center justify-center rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800" type="submit">Filter Arsip</button>
+                <div class="flex items-end gap-2">
+                    <div class="flex-1">
+                        <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.25em] text-slate-500" for="year">Tahun</label>
+                        <input id="year" name="year" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100" value="{{ $selectedYear ?: '' }}" placeholder="Contoh: 2026">
+                    </div>
+                    <button class="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800" type="submit">Filter</button>
+                </div>
             </form>
         </section>
 
         <section class="overflow-hidden rounded-[32px] border border-white/70 bg-white/85 p-6 shadow-[0_30px_80px_-35px_rgba(15,23,42,0.24)] backdrop-blur">
-            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-blue-700">Arsip SOP</p>
-            <h3 class="mt-2 text-2xl font-bold text-slate-900">Arsip seluruh dokumen SOP</h3>
-            <p class="mt-2 text-sm leading-6 text-slate-500">Arsip hanya menampilkan dokumen SOP yang sudah disahkan (sudah ditandatangani kepala dan diunggah). Dokumen yang diunduh dan dilihat adalah versi final yang sudah bertanda tangan.</p>
-
-            @if (filled($search))
-                <div class="mt-6 inline-flex items-center gap-2 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-800">
-                    <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
-                    Hasil pencarian: <span class="font-bold">"{{ e($search) }}"</span>
-                    @if ($finalGroups->isEmpty())
-                        <span class="text-blue-600">— tidak ditemukan arsip yang sesuai.</span>
-                    @else
-                        <span class="text-blue-600">— {{ $groups->total() }} kelompok ditemukan.</span>
-                    @endif
+            <div class="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.3em] text-blue-700">Arsip SOP</p>
+                    <h3 class="mt-2 text-2xl font-bold text-slate-900">Arsip seluruh dokumen SOP</h3>
+                    <p class="mt-2 text-sm leading-6 text-slate-500">Arsip hanya menampilkan dokumen SOP yang sudah disahkan (sudah ditandatangani kepala dan diunggah). Dokumen yang diunduh dan dilihat adalah versi final yang sudah bertanda tangan.</p>
                 </div>
-            @endif
+                @if (filled($search) || $selectedTeam || $selectedActivity || $selectedYear)
+                    <div class="inline-flex items-center gap-2 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-800">
+                        <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+                        <span>{{ $totalCount }} arsip ditemukan</span>
+                    </div>
+                @endif
+            </div>
 
-            @if ($finalGroups->isEmpty())
+            @if ($groups->isEmpty())
                 <div class="mt-6 rounded-[28px] border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
                     <h4 class="text-lg font-bold text-slate-900">Belum ada arsip dokumen</h4>
                     <p class="mt-2 text-sm leading-6 text-slate-500">Dokumen akan tampil di arsip setelah SOP difinalisasi dan diunggah dokumen sahnya (yang sudah ditandatangani kepala) melalui menu Daftar SOP.</p>
@@ -168,17 +102,17 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 bg-white">
-                            @foreach ($finalGroups as $index => $sopGroup)
+                            @foreach ($groups as $index => $sopGroup)
                                 @php
                                     $latest = $sopGroup['latest'];
-                                    $history = $sopGroup['history'];
-                                    $historyId = 'history-' . $index;
+                                    $history = $sopGroup['history'] ?? collect();
+                                    $historyId = 'archive-history-' . $index . '-' . ($latest['group_key'] ?? $index);
                                 @endphp
                                 <tr class="hover:bg-slate-50/70">
                                     <td class="px-5 py-4">
-                                        <div class="max-w-xl">
-                                            <p class="text-base font-bold leading-7 text-slate-900">{{ $latest['title'] }}</p>
-                                            <p class="mt-1 text-sm font-medium leading-6 text-slate-500">{{ $latest['sop_number'] }}</p>
+                                        <div>
+                                            <p class="font-semibold leading-6 text-slate-800">{{ $latest['title'] }}</p>
+                                            <p class="mt-1 text-sm font-medium text-slate-500">{{ $latest['sop_number'] }}</p>
                                         </div>
                                     </td>
                                     <td class="px-5 py-4 text-slate-600">{{ $latest['team'] }}</td>
@@ -186,7 +120,7 @@
                                     <td class="px-5 py-4 text-slate-700">
                                         <div class="flex items-center gap-2">
                                             <div class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-[11px] font-semibold text-slate-600">
-                                                {{ str($latest['updater_name'] ?? '-')->trim()->explode(' ')->filter()->take(2)->map(fn ($p) => str($p)->substr(0, 1)->upper())->implode('') ?: '-' }}
+                                                {{ $latest['updater_initials'] ?? '-' }}
                                             </div>
                                             <span class="text-sm leading-5">{{ $latest['updater_name'] ?? '-' }}</span>
                                         </div>
@@ -237,10 +171,10 @@
                                                 <table class="min-w-full divide-y divide-slate-200 text-sm">
                                                     <thead class="bg-slate-50/90">
                                                         <tr>
-                                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Versi</th>
-                                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Terakhir Diperbarui Oleh</th>
-                                                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Tgl Finalisasi</th>
-                                                            <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Aksi</th>
+                                                            <th class="px-4 py-3 text-left font-semibold text-slate-500">Revisi Ke</th>
+                                                            <th class="px-4 py-3 text-left font-semibold text-slate-500">Terakhir Diperbarui Oleh</th>
+                                                            <th class="px-4 py-3 text-left font-semibold text-slate-500">Tgl Finalisasi</th>
+                                                            <th class="px-4 py-3 text-center font-semibold text-slate-500">Aksi</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody class="divide-y divide-slate-100 bg-white">
@@ -259,7 +193,7 @@
                                                                 <td class="px-4 py-3 text-slate-700">
                                                                     <div class="flex items-center gap-2">
                                                                         <div class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
-                                                                            {{ str($historyRow['updater_name'] ?? '-')->trim()->explode(' ')->filter()->take(2)->map(fn ($p) => str($p)->substr(0, 1)->upper())->implode('') ?: '-' }}
+                                                                            {{ $historyRow['updater_initials'] ?? '-' }}
                                                                         </div>
                                                                         <span class="text-xs leading-5">{{ $historyRow['updater_name'] ?? '-' }}</span>
                                                                     </div>
@@ -297,24 +231,24 @@
                             @endforeach
                         </tbody>
                     </table>
-                </div>
 
-                @if (isset($groups) && $groups->hasPages())
-                    <div class="mt-6 flex flex-col items-start justify-between gap-4 border-t border-slate-100 px-5 py-5 sm:flex-row sm:items-center">
-                        <p class="text-xs font-semibold leading-5 text-slate-500">
-                            Menampilkan
-                            <span class="font-bold text-slate-800">{{ $groups->firstItem() }}</span>
-                            sampai
-                            <span class="font-bold text-slate-800">{{ $groups->lastItem() }}</span>
-                            dari
-                            <span class="font-bold text-slate-800">{{ $groups->total() }}</span>
-                            kelompok arsip.
-                        </p>
-                        <div>
-                            {{ $groups->onEachSide(1)->links('pagination::tailwind') }}
+                    @if (isset($paginator) && $paginator->hasPages())
+                        <div class="flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 bg-slate-50/60 px-5 py-4">
+                            <div class="text-sm text-slate-500">
+                                Menampilkan
+                                <span class="font-bold text-slate-800">{{ $paginator->firstItem() }}</span>
+                                sampai
+                                <span class="font-bold text-slate-800">{{ $paginator->lastItem() }}</span>
+                                dari
+                                <span class="font-bold text-slate-800">{{ $paginator->total() }}</span>
+                                arsip
+                            </div>
+                            <div>
+                                {{ $paginator->onEachSide(1)->links('pagination::tailwind') }}
+                            </div>
                         </div>
-                    </div>
-                @endif
+                    @endif
+                </div>
             @endif
         </section>
     </div>

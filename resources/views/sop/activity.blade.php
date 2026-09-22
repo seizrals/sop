@@ -41,21 +41,9 @@
     $groupedDocuments = $normalizedDocuments
         ->groupBy('root_key')
         ->map(function ($items) {
-            $sorted = $items
+            return $items
                 ->sortByDesc(fn ($item) => ($item['revision_number'] ?? 0) * 10000000000 + ($item['updated_at'] ?? 0))
                 ->values();
-
-            $first = $sorted->first();
-
-            $history = $sorted->slice(1);
-
-            $history = $history->filter(function ($hItem) {
-                $hStatus = $hItem['status'] ?? 'draft';
-                $hSigned = filled(data_get($hItem, 'model.signed_file_path'));
-                return $hStatus === 'final' && $hSigned;
-            })->values();
-
-            return collect([$first])->concat($history)->values();
         })
         ->sortByDesc(function ($items) {
             $first = $items->first();
@@ -137,7 +125,21 @@
                             @foreach ($groupedDocuments as $groupIndex => $groupItems)
                                 @php
                                     $document = $groupItems->first();
-                                    $history = $groupItems->slice(1)->values();
+                                    $latestRevision = $groupItems->max('revision_number') ?? 0;
+                                    $history = $groupItems
+                                        ->filter(function ($item) use ($document, $groupItems, $latestRevision) {
+                                            if ($item === $document) {
+                                                return false;
+                                            }
+                                            if ($groupItems->search($item) === 0) {
+                                                return false;
+                                            }
+                                            if (($item['revision_number'] ?? 0) === $latestRevision) {
+                                                return false;
+                                            }
+                                            return true;
+                                        })
+                                        ->values();
                                     $historyId = 'history-' . $document['root_key'];
                                 @endphp
                                 <tr class="hover:bg-slate-50/70">
@@ -298,7 +300,7 @@
                                 </tr>
                                 @if ($history->isNotEmpty())
                                     <tr id="{{ $historyId }}" class="hidden bg-slate-50/50">
-                                        <td colspan="6" class="px-5 py-4">
+                                        <td colspan="7" class="px-5 py-4">
                                             <div class="rounded-[20px] border border-slate-200 bg-white p-4">
                                                 <div class="flex items-center justify-between gap-3">
                                                     <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Riwayat SOP</p>
