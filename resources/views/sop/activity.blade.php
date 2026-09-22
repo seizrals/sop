@@ -118,7 +118,7 @@
                                 <th class="px-5 py-4 text-left font-semibold text-slate-500">Status</th>
                                 <th class="px-5 py-4 text-center font-semibold text-slate-500">Revisi</th>
                                 <th class="px-5 py-4 text-center font-semibold text-slate-500">Disahkan</th>
-                                <th class="px-5 py-4 text-right font-semibold text-slate-500">Aksi</th>
+                                <th class="px-5 py-4 text-center font-semibold text-slate-500">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 bg-white">
@@ -200,54 +200,10 @@
                                         @if ($document['status'] !== 'final')
                                             <span class="text-sm text-slate-400">-</span>
                                         @elseif ($hasSigned)
-                                            <div class="flex flex-col items-center gap-2">
-                                                <span class="inline-flex rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-violet-700" title="Diupload pada {{ optional($document['model']->signed_at)->timezone(config('app.timezone'))->format('d/m/Y H:i') }}">
-                                                    <svg viewBox="0 0 24 24" class="mr-1.5 h-3 w-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="m9 11 3 3L22 4"></path></svg>
-                                                    Sudah Disahkan
-                                                </span>
-                                                <div class="flex flex-wrap justify-center gap-1">
-                                                    <a href="{{ route('sop.signed-preview', $document['model']) }}" target="_blank" class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-sky-200 bg-sky-50 text-sky-700 transition hover:bg-sky-100" title="Lihat dokumen disahkan">
-                                                        <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                                            <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"></path>
-                                                            <circle cx="12" cy="12" r="3"></circle>
-                                                        </svg>
-                                                    </a>
-                                                    <a href="{{ route('sop.signed-download', $document['model']) }}" class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 transition hover:bg-emerald-100" title="Unduh dokumen disahkan">
-                                                        <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                                            <path d="M12 3v12"></path>
-                                                            <path d="m7 10 5 5 5-5"></path>
-                                                            <path d="M4 21h16"></path>
-                                                        </svg>
-                                                    </a>
-                                                    <button
-                                                        type="button"
-                                                        class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 text-amber-700 transition hover:bg-amber-100"
-                                                        data-open-upload
-                                                        data-document-id="{{ $document['model']->id }}"
-                                                        data-document-title="{{ $document['title'] }}"
-                                                        title="Unggah ulang dokumen disahkan"
-                                                    >
-                                                        <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                                            <path d="M17 8l-5-5-5 5"></path>
-                                                            <path d="M12 3v12"></path>
-                                                        </svg>
-                                                    </button>
-                                                    @if ($isAdmin)
-                                                        <form method="POST" action="{{ route('sop.signed-delete', $document['model']) }}" class="inline" data-delete-confirm data-delete-title="Hapus Dokumen Disahkan" data-delete-message="Anda yakin menghapus dokumen SOP yang disahkan?">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100" type="submit" title="Hapus dokumen disahkan">
-                                                                <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                                                    <path d="M3 6h18"></path>
-                                                                    <path d="M8 6V4h8v2"></path>
-                                                                    <path d="M19 6l-1 14H6L5 6"></path>
-                                                                </svg>
-                                                            </button>
-                                                        </form>
-                                                    @endif
-                                                </div>
-                                            </div>
+                                            <span class="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700" title="Diupload pada {{ optional($document['model']->signed_at)->timezone(config('app.timezone'))->format('d/m/Y H:i') }}. Buka menu Arsip untuk melihat &amp; unduh dokumen disahkan.">
+                                                <svg viewBox="0 0 24 24" class="mr-1.5 h-3 w-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="m9 11 3 3L22 4"></path></svg>
+                                                Sudah Disahkan
+                                            </span>
                                         @else
                                             <button
                                                 type="button"
@@ -266,7 +222,7 @@
                                         @endif
                                     </td>
                                     <td class="px-5 py-4">
-                                        <div class="flex flex-wrap justify-end gap-2">
+                                        <div class="flex flex-wrap justify-center gap-2">
                                             @if ($document['status'] !== 'final')
                                                 <a href="{{ route('sop.edit', $document['model']) }}" class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50" title="Edit SOP">
                                                     <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -294,6 +250,22 @@
                                                     <path d="M4 21h16"></path>
                                                 </svg>
                                             </a>
+                                            @if ($document['status'] === 'final' && filled($document['model']->signed_file_path))
+                                                <button
+                                                    type="button"
+                                                    class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 text-amber-700 transition hover:bg-amber-100"
+                                                    data-open-upload
+                                                    data-document-id="{{ $document['model']->id }}"
+                                                    data-document-title="{{ $document['title'] }}"
+                                                    title="Unggah ulang dokumen disahkan"
+                                                >
+                                                    <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                                        <path d="M17 8l-5-5-5 5"></path>
+                                                        <path d="M12 3v12"></path>
+                                                    </svg>
+                                                </button>
+                                            @endif
                                             @if ($document['status'] !== 'final' || $isAdmin)
                                                 <form method="POST" action="{{ route('sop.destroy', $document['model']) }}" class="inline" @if ($document['status'] === 'final') data-delete-confirm data-delete-title="Hapus SOP FINAL" data-delete-message="Anda yakin menghapus SOP FINAL? Tindakan ini tidak dapat dibatalkan." @endif>
                                                     @csrf
@@ -330,7 +302,7 @@
                                                                 <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Status</th>
                                                                 <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Revisi</th>
                                                                 <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Disahkan</th>
-                                                                <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Aksi</th>
+                                                                <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Aksi</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody class="divide-y divide-slate-100 bg-white">
@@ -365,24 +337,16 @@
                                                                     </td>
                                                                     <td class="px-4 py-3 text-center">
                                                                         @if (($historyItem['status'] ?? 'draft') === 'final')
-                                                                            @if (filled($historyItem['model']->signed_file_path))
-                                                                                <form method="POST" action="{{ route('sop.revise', $historyItem['model']) }}" class="inline">
-                                                                                    @csrf
-                                                                                    <input type="hidden" name="revision_year" value="{{ now()->year }}">
-                                                                                    <button class="inline-flex items-center justify-center rounded-2xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100" type="submit" title="Buat revisi dari SOP yang sudah disahkan">Revisi</button>
-                                                                                </form>
-                                                                            @else
-                                                                                <div class="group relative inline-block">
-                                                                                    <span class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-400" title="Revisi hanya bisa dilakukan jika SOP sudah diunggah dokumen sahnya">
-                                                                                        <svg viewBox="0 0 24 24" class="mr-1 h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>
-                                                                                        Revisi
-                                                                                    </span>
-                                                                                    <span class="pointer-events-none absolute bottom-full right-0 z-30 mb-3 w-[26rem] max-w-[28rem] whitespace-normal rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-left text-[11px] font-semibold leading-5 text-white opacity-0 shadow-[0_20px_45px_-15px_rgba(15,23,42,0.6)] transition-opacity duration-150 group-hover:opacity-100">
-                                                                                        Revisi hanya bisa dilakukan jika SOP sudah diunggah dokumen sahnya (sudah ditandatangani kepala). Unggah terlebih dahulu pada kolom Disahkan.
-                                                                                        <span class="absolute -bottom-1 right-10 h-2.5 w-2.5 rotate-45 border-b border-r border-slate-800 bg-slate-900"></span>
-                                                                                    </span>
-                                                                                </div>
-                                                                            @endif
+                                                                            <div class="group relative inline-block">
+                                                                                <span class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-400" title="Hanya SOP versi terbaru yang dapat direvisi">
+                                                                                    <svg viewBox="0 0 24 24" class="mr-1 h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>
+                                                                                    Revisi
+                                                                                </span>
+                                                                                <span class="pointer-events-none absolute bottom-full right-0 z-30 mb-3 w-[24rem] max-w-[26rem] whitespace-normal rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-left text-[11px] font-semibold leading-5 text-white opacity-0 shadow-[0_20px_45px_-15px_rgba(15,23,42,0.6)] transition-opacity duration-150 group-hover:opacity-100">
+                                                                                    Hanya SOP versi terbaru (yang ada di daftar utama yang dapat dibuat revisi baru. SOP pada riwayat ini adalah versi lama.
+                                                                                    <span class="absolute -bottom-1 right-10 h-2.5 w-2.5 rotate-45 border-b border-r border-slate-800 bg-slate-900"></span>
+                                                                                </span>
+                                                                            </div>
                                                                         @else
                                                                             <span class="text-sm text-slate-400">-</span>
                                                                         @endif
@@ -394,54 +358,10 @@
                                                                         @if (($historyItem['status'] ?? 'draft') !== 'final')
                                                                             <span class="text-sm text-slate-400">-</span>
                                                                         @elseif ($hasSignedHistory)
-                                                                            <div class="flex flex-col items-center gap-1">
-                                                                                <span class="inline-flex rounded-full border border-violet-200 bg-violet-50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-violet-700">
-                                                                                    <svg viewBox="0 0 24 24" class="mr-1 h-2.5 w-2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="m9 11 3 3L22 4"></path></svg>
-                                                                                    Sudah Disahkan
-                                                                                </span>
-                                                                                <div class="flex flex-wrap justify-center gap-1">
-                                                                                    <a href="{{ route('sop.signed-preview', $historyItem['model']) }}" target="_blank" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-sky-200 bg-sky-50 text-sky-700 transition hover:bg-sky-100" title="Lihat dokumen disahkan">
-                                                                                        <svg viewBox="0 0 24 24" class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                                                                            <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"></path>
-                                                                                            <circle cx="12" cy="12" r="3"></circle>
-                                                                                        </svg>
-                                                                                    </a>
-                                                                                    <a href="{{ route('sop.signed-download', $historyItem['model']) }}" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 transition hover:bg-emerald-100" title="Unduh dokumen disahkan">
-                                                                                        <svg viewBox="0 0 24 24" class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                                                                            <path d="M12 3v12"></path>
-                                                                                            <path d="m7 10 5 5 5-5"></path>
-                                                                                            <path d="M4 21h16"></path>
-                                                                                        </svg>
-                                                                                    </a>
-                                                                                    <button
-                                                                                        type="button"
-                                                                                        class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-amber-200 bg-amber-50 text-amber-700 transition hover:bg-amber-100"
-                                                                                        data-open-upload
-                                                                                        data-document-id="{{ $historyItem['model']->id }}"
-                                                                                        data-document-title="{{ $historyItem['title'] }}"
-                                                                                        title="Unggah ulang"
-                                                                                    >
-                                                                                        <svg viewBox="0 0 24 24" class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                                                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                                                                            <path d="M17 8l-5-5-5 5"></path>
-                                                                                            <path d="M12 3v12"></path>
-                                                                                        </svg>
-                                                                                    </button>
-                                                                                    @if ($isAdmin)
-                                                                                        <form method="POST" action="{{ route('sop.signed-delete', $historyItem['model']) }}" class="inline" data-delete-confirm data-delete-title="Hapus Dokumen Disahkan" data-delete-message="Anda yakin menghapus dokumen SOP yang disahkan?">
-                                                                                            @csrf
-                                                                                            @method('DELETE')
-                                                                                            <button class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100" type="submit" title="Hapus">
-                                                                                                <svg viewBox="0 0 24 24" class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                                                                                    <path d="M3 6h18"></path>
-                                                                                                    <path d="M8 6V4h8v2"></path>
-                                                                                                    <path d="M19 6l-1 14H6L5 6"></path>
-                                                                                                </svg>
-                                                                                            </button>
-                                                                                        </form>
-                                                                                    @endif
-                                                                                </div>
-                                                                            </div>
+                                                                            <span class="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-emerald-700" title="Buka menu Arsip untuk melihat &amp; unduh dokumen disahkan.">
+                                                                                <svg viewBox="0 0 24 24" class="mr-1 h-2.5 w-2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="m9 11 3 3L22 4"></path></svg>
+                                                                                Sudah Disahkan
+                                                                            </span>
                                                                         @else
                                                                             <button
                                                                                 type="button"
@@ -460,7 +380,7 @@
                                                                         @endif
                                                                     </td>
                                                                     <td class="px-4 py-3">
-                                                                        <div class="flex flex-wrap justify-end gap-2">
+                                                                        <div class="flex flex-wrap justify-center gap-2">
                                                                             @if (($historyItem['status'] ?? 'draft') !== 'final')
                                                                                 <a href="{{ route('sop.edit', $historyItem['model']) }}" class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50" title="Edit SOP">
                                                                                     <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -488,6 +408,22 @@
                                                                                     <path d="M4 21h16"></path>
                                                                                 </svg>
                                                                             </a>
+                                                                            @if (($historyItem['status'] ?? 'draft') === 'final' && filled($historyItem['model']->signed_file_path))
+                                                                                <button
+                                                                                    type="button"
+                                                                                    class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 text-amber-700 transition hover:bg-amber-100"
+                                                                                    data-open-upload
+                                                                                    data-document-id="{{ $historyItem['model']->id }}"
+                                                                                    data-document-title="{{ $historyItem['title'] }}"
+                                                                                    title="Unggah ulang dokumen disahkan"
+                                                                                >
+                                                                                    <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                                                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                                                                        <path d="M17 8l-5-5-5 5"></path>
+                                                                                        <path d="M12 3v12"></path>
+                                                                                    </svg>
+                                                                                </button>
+                                                                            @endif
                                                                             @if (($historyItem['status'] ?? 'draft') !== 'final' || $isAdmin)
                                                                                 <form method="POST" action="{{ route('sop.destroy', $historyItem['model']) }}" class="inline" @if (($historyItem['status'] ?? 'draft') === 'final') data-delete-confirm data-delete-title="Hapus SOP FINAL" data-delete-message="Anda yakin menghapus SOP FINAL? Tindakan ini tidak dapat dibatalkan." @endif>
                                                                                     @csrf
