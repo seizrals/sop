@@ -46,20 +46,14 @@
                 ->values();
 
             $first = $sorted->first();
-            $firstStatus = $first['status'] ?? 'draft';
-            $firstHasSigned = filled(data_get($first, 'model.signed_file_path'));
-
-            $isLatestActiveDraft = ! ($firstStatus === 'final' && $firstHasSigned);
 
             $history = $sorted->slice(1);
 
-            if ($isLatestActiveDraft) {
-                $history = $history->filter(function ($hItem) {
-                    $hStatus = $hItem['status'] ?? 'draft';
-                    $hSigned = filled(data_get($hItem, 'model.signed_file_path'));
-                    return $hStatus === 'final' && $hSigned;
-                })->values();
-            }
+            $history = $history->filter(function ($hItem) {
+                $hStatus = $hItem['status'] ?? 'draft';
+                $hSigned = filled(data_get($hItem, 'model.signed_file_path'));
+                return $hStatus === 'final' && $hSigned;
+            })->values();
 
             return collect([$first])->concat($history)->values();
         })
@@ -359,8 +353,8 @@
                                                                         @if (($historyItem['status'] ?? 'draft') !== 'final')
                                                                             <span class="text-sm text-slate-400">-</span>
                                                                         @elseif ($hasSignedHistory)
-                                                                            <span class="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-emerald-700" title="Buka menu Arsip untuk melihat &amp; unduh dokumen disahkan.">
-                                                                                <svg viewBox="0 0 24 24" class="mr-1 h-2.5 w-2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="m9 11 3 3L22 4"></path></svg>
+                                                                            <span class="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700" title="Buka menu Arsip untuk melihat &amp; unduh dokumen disahkan.">
+                                                                                <svg viewBox="0 0 24 24" class="mr-1.5 h-3 w-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="m9 11 3 3L22 4"></path></svg>
                                                                                 Sudah Disahkan
                                                                             </span>
                                                                         @else
