@@ -92,6 +92,23 @@
                             @endforeach
                         </tbody>
                     </table>
+
+                    @if ($activities->hasPages())
+                        <div class="flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 bg-slate-50/60 px-5 py-4">
+                            <div class="text-sm text-slate-500">
+                                Menampilkan
+                                <span class="font-bold text-slate-800">{{ $activities->firstItem() }}</span>
+                                sampai
+                                <span class="font-bold text-slate-800">{{ $activities->lastItem() }}</span>
+                                dari
+                                <span class="font-bold text-slate-800">{{ $activities->total() }}</span>
+                                kegiatan
+                            </div>
+                            <div>
+                                {{ $activities->onEachSide(1)->links('pagination::tailwind') }}
+                            </div>
+                        </div>
+                    @endif
                 </div>
             @endif
         </section>

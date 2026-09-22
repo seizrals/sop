@@ -33,15 +33,19 @@ class SopController extends Controller
         ]);
     }
 
-    public function team(Team $team): View
+    public function team(Request $request, Team $team): View
     {
+        $perPage = 10;
+        $activities = $team->activities()
+            ->withCount('sopDocuments')
+            ->orderBy('name')
+            ->paginate($perPage)
+            ->withQueryString();
+
         return view('sop.team', [
             'pageTitle' => 'SOP',
             'team' => $team,
-            'activities' => $team->activities()
-                ->withCount('sopDocuments')
-                ->orderBy('name')
-                ->get(),
+            'activities' => $activities,
         ]);
     }
 
