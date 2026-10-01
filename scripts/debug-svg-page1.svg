@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="120.00 9.00 77.00 192.00" width="291px" height="726px" style="background:#f7f7f7;border:1px solid #ccc;">
+<defs>
+  <marker id="arrow-default" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#000000"/></marker>
+  <marker id="arrow-Y" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#007a33"/></marker>
+  <marker id="arrow-T" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b22222"/></marker>
+</defs>
+<!-- Outer bounds --><rect x="126.00" y="15.00" width="65.00" height="180.00" fill="none" stroke="#bbb" stroke-dasharray="2,2" stroke-width="0.2"/>
+<!-- Obstacle clearance boxes (debug) -->
+<rect x="129.20" y="26.70" width="23.60" height="12.60" fill="rgba(255,200,0,0.08)" stroke="rgba(255,160,0,0.35)" stroke-dasharray="1.5,1" stroke-width="0.25"/>
+<rect x="162.20" y="23.70" width="25.60" height="18.60" fill="rgba(255,200,0,0.08)" stroke="rgba(255,160,0,0.35)" stroke-dasharray="1.5,1" stroke-width="0.25"/>
+<rect x="129.20" y="50.20" width="23.60" height="12.60" fill="rgba(255,200,0,0.08)" stroke="rgba(255,160,0,0.35)" stroke-dasharray="1.5,1" stroke-width="0.25"/>
+<rect x="163.20" y="73.70" width="23.60" height="12.60" fill="rgba(255,200,0,0.08)" stroke="rgba(255,160,0,0.35)" stroke-dasharray="1.5,1" stroke-width="0.25"/>
+<!-- Shapes -->
+<rect x="131.00" y="28.50" width="20.00" height="9.00" fill="#787878" stroke="#000000" stroke-width="0.38"/>
+<text x="141.00" y="34.20" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="3.2" font-weight="bold" fill="#ffffff">Isi Formulir</text>
+<text x="141.00" y="26.00" text-anchor="middle" font-family="Arial" font-size="2.4" fill="#aa00aa">occ:TR</text>
+<polygon points="175,25.5 186,33 175,40.5 164,33" fill="#ffffff" stroke="#000000" stroke-width="0.38"/>
+<text x="175.00" y="34.20" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="3.2" font-weight="bold" fill="#000000">Lengkap?</text>
+<text x="175.00" y="23.00" text-anchor="middle" font-family="Arial" font-size="2.4" fill="#aa00aa">occ:TRL</text>
+<rect x="131.00" y="52.00" width="20.00" height="9.00" fill="#787878" stroke="#000000" stroke-width="0.38"/>
+<text x="141.00" y="57.70" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="3.2" font-weight="bold" fill="#ffffff">Perbaiki Data</text>
+<text x="141.00" y="49.50" text-anchor="middle" font-family="Arial" font-size="2.4" fill="#aa00aa">occ:RB</text>
+<rect x="165.00" y="75.50" width="20.00" height="9.00" fill="#787878" stroke="#000000" stroke-width="0.38"/>
+<text x="175.00" y="81.20" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="3.2" font-weight="bold" fill="#ffffff">Simpan ke Arsip</text>
+<text x="175.00" y="73.00" text-anchor="middle" font-family="Arial" font-size="2.4" fill="#aa00aa">occ:T</text>
+<!-- Connectors -->
+<path d="M151.00,33.00 L154.50,33.00 L164.00,33.00 " fill="none" stroke="#000000" stroke-width="0.42" marker-end="url(#arrow-default)"/>
+<circle cx="151.00" cy="33.00" r="0.55" fill="#000000" opacity="0.85"/>
+<circle cx="154.50" cy="33.00" r="0.55" fill="#000000" opacity="0.85"/>
+<circle cx="164.00" cy="33.00" r="0.55" fill="#000000" opacity="0.85"/>
+<path d="M186.00,33.00 L189.50,33.00 L189.50,25.50 L126.00,25.50 L126.00,65.00 L126.00,56.50 L151.00,56.50 " fill="none" stroke="#007a33" stroke-width="0.42" marker-end="url(#arrow-Y)"/>
+<circle cx="186.00" cy="33.00" r="0.55" fill="#007a33" opacity="0.85"/>
+<circle cx="189.50" cy="33.00" r="0.55" fill="#007a33" opacity="0.85"/>
+<circle cx="189.50" cy="25.50" r="0.55" fill="#007a33" opacity="0.85"/>
+<circle cx="126.00" cy="25.50" r="0.55" fill="#007a33" opacity="0.85"/>
+<circle cx="126.00" cy="65.00" r="0.55" fill="#007a33" opacity="0.85"/>
+<circle cx="126.00" cy="56.50" r="0.55" fill="#007a33" opacity="0.85"/>
+<circle cx="151.00" cy="56.50" r="0.55" fill="#007a33" opacity="0.85"/>
+<path d="M175.00,25.50 L175.00,22.00 L175.00,15.00 L191.00,15.00 L191.00,33.00 L141.00,33.00 L141.00,28.50 " fill="none" stroke="#b22222" stroke-width="0.42" marker-end="url(#arrow-T)"/>
+<circle cx="175.00" cy="25.50" r="0.55" fill="#b22222" opacity="0.85"/>
+<circle cx="175.00" cy="22.00" r="0.55" fill="#b22222" opacity="0.85"/>
+<circle cx="175.00" cy="15.00" r="0.55" fill="#b22222" opacity="0.85"/>
+<circle cx="191.00" cy="15.00" r="0.55" fill="#b22222" opacity="0.85"/>
+<circle cx="191.00" cy="33.00" r="0.55" fill="#b22222" opacity="0.85"/>
+<circle cx="141.00" cy="33.00" r="0.55" fill="#b22222" opacity="0.85"/>
+<circle cx="141.00" cy="28.50" r="0.55" fill="#b22222" opacity="0.85"/>
+<path d="M141.00,61.00 L141.00,64.50 L141.00,75.50 L175.00,75.50 " fill="none" stroke="#000000" stroke-width="0.42" marker-end="url(#arrow-default)"/>
+<circle cx="141.00" cy="61.00" r="0.55" fill="#000000" opacity="0.85"/>
+<circle cx="141.00" cy="64.50" r="0.55" fill="#000000" opacity="0.85"/>
+<circle cx="141.00" cy="75.50" r="0.55" fill="#000000" opacity="0.85"/>
+<circle cx="175.00" cy="75.50" r="0.55" fill="#000000" opacity="0.85"/>
+<!-- Branch labels -->
+<text x="187.50" y="31.50" font-family="Arial" font-size="3.3" font-weight="bold" fill="#007a33">Y</text>
+<text x="176.20" y="23.70" font-family="Arial" font-size="3.3" font-weight="bold" fill="#b22222">T</text>
+</svg>

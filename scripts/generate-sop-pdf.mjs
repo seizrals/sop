@@ -19,8 +19,16 @@ const arialBoldPath = 'C:\\Windows\\Fonts\\arialbd.ttf';
 const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 const pageWidth = doc.internal.pageSize.getWidth();
 const pageHeight = doc.internal.pageSize.getHeight();
-const shapeFill = [122, 122, 122];
-const shapeStroke = [65, 65, 65];
+
+const PURE_BLACK = [0, 0, 0];
+const SHAPE_FILL = [211, 211, 211];
+const SHAPE_TEXT_WHITE = [0, 0, 0];
+const LINE_WIDTH_MM = 0.32;
+const SHAPE_STROKE_MM = 0.34;
+const ARROW_PENETRATE_MM = 0.04;
+const NODE_SIZE = 6.2;
+const DIAMOND_SCALE = 1.3;
+const DIAMOND_VSCALE = DIAMOND_SCALE * 0.8;
 
 const hasArialRegular = fs.existsSync(arialRegularPath);
 const hasArialBold = fs.existsSync(arialBoldPath);
@@ -80,6 +88,23 @@ const loadLogoDataUrl = () => {
   };
 };
 
+const shapeEdgeOffsets = (type) => {
+  switch (type) {
+    case 'decision':
+      return {
+        top: NODE_SIZE * DIAMOND_VSCALE,
+        bottom: NODE_SIZE * DIAMOND_VSCALE,
+        left: NODE_SIZE * DIAMOND_SCALE,
+        right: NODE_SIZE * DIAMOND_SCALE,
+      };
+    case 'start':
+    case 'end':
+      return { top: NODE_SIZE / 2, bottom: NODE_SIZE / 2, left: NODE_SIZE, right: NODE_SIZE };
+    default:
+      return { top: NODE_SIZE / 2, bottom: NODE_SIZE / 2, left: NODE_SIZE, right: NODE_SIZE };
+  }
+};
+
 const drawPageOne = () => {
   const startX = 10;
   const startY = 10;
@@ -88,8 +113,8 @@ const drawPageOne = () => {
   const rightX = pageWidth - 10;
   const rowH = 7;
 
-  doc.setDrawColor(0);
-  doc.setLineWidth(0.1);
+  doc.setDrawColor(...PURE_BLACK);
+  doc.setLineWidth(SHAPE_STROKE_MM);
 
   const drawRightRow = (y, label, value, options = {}) => {
     const tall = options.tall === true;
@@ -118,12 +143,12 @@ const drawPageOne = () => {
       const approvalName = String(payload.approval_name || '-');
       doc.text(approvalName, valueCenterX, y + 33, { align: 'center' });
       const textWidth = doc.getTextWidth(approvalName);
-      doc.setLineWidth(0.2);
+      doc.setLineWidth(SHAPE_STROKE_MM * 1.4);
       doc.line(valueCenterX - (textWidth / 2), y + 34, valueCenterX + (textWidth / 2), y + 34);
+      doc.setLineWidth(SHAPE_STROKE_MM);
 
       setRegular();
       doc.text(`NIP. ${payload.approval_nip || '-'}`, valueCenterX, y + 38, { align: 'center' });
-      doc.setLineWidth(0.1);
     } else {
       doc.text(value, labelSplitX + 2, y + (h / 2) + 1);
     }
@@ -235,11 +260,11 @@ const drawPageOne = () => {
       fontStyle: 'normal',
       fontSize: 9,
       cellPadding: 3,
-      lineColor: 0,
-      lineWidth: 0.1,
+      lineColor: PURE_BLACK,
+      lineWidth: SHAPE_STROKE_MM,
       valign: 'top',
       overflow: 'linebreak',
-      textColor: 0,
+      textColor: PURE_BLACK,
     },
     columnStyles: {
       0: { cellWidth: (pageWidth - 20) / 2 },
@@ -247,12 +272,14 @@ const drawPageOne = () => {
     },
     tableWidth: pageWidth - 20,
   });
+  return doc.lastAutoTable?.finalY ?? (startY + 5);
 };
 
 const drawDiamond = (x, y, size, label = '') => {
   const vSize = size * 0.8;
-  doc.setDrawColor(...shapeStroke);
-  doc.setFillColor(...shapeFill);
+  doc.setDrawColor(...PURE_BLACK);
+  doc.setFillColor(...SHAPE_FILL);
+  doc.setLineWidth(SHAPE_STROKE_MM);
   doc.lines(
     [[size, -vSize], [size, vSize], [-size, vSize], [-size, -vSize]],
     x - size,
@@ -263,21 +290,100 @@ const drawDiamond = (x, y, size, label = '') => {
   );
 
   if (label) {
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(6);
-    const textLines = doc.splitTextToSize(label, size * 1.55);
-    const lineHeight = 2.5;
+    doc.setTextColor(...PURE_BLACK);
+    doc.setFont(boldFont, 'bold');
+    doc.setFontSize(6.3);
+    const textLines = doc.splitTextToSize(label, size * 1.5);
+    const lineHeight = 2.4;
     const totalHeight = textLines.length * lineHeight;
     const startY = y - (totalHeight / 2) + (lineHeight / 2);
     textLines.forEach((line, index) => {
       doc.text(line, x, startY + (index * lineHeight), { align: 'center', baseline: 'middle' });
     });
-    doc.setTextColor(0, 0, 0);
+    doc.setTextColor(...PURE_BLACK);
   }
 };
 
-const drawPageTwo = () => {
-  doc.addPage();
+const drawStartEndShape = (x, y, size, label) => {
+  doc.setDrawColor(...PURE_BLACK);
+  doc.setFillColor(...SHAPE_FILL);
+  doc.setLineWidth(SHAPE_STROKE_MM);
+  doc.roundedRect(x - size, y - (size / 2), size * 2, size, 3, 3, 'FD');
+  doc.setTextColor(...SHAPE_TEXT_WHITE);
+  doc.setFont(boldFont, 'bold');
+  doc.setFontSize(6.8);
+  doc.text(label, x, y, { align: 'center', baseline: 'middle' });
+  doc.setTextColor(...PURE_BLACK);
+};
+
+const drawProcessShape = (x, y, size) => {
+  doc.setDrawColor(...PURE_BLACK);
+  doc.setFillColor(...SHAPE_FILL);
+  doc.setLineWidth(SHAPE_STROKE_MM);
+  doc.rect(x - size, y - (size / 2), size * 2, size, 'FD');
+};
+
+const drawArrow = (x, y, direction) => {
+  const s = 1.0;
+  const t = 0.7;
+  doc.setDrawColor(...PURE_BLACK);
+  doc.setFillColor(...PURE_BLACK);
+  doc.setLineWidth(LINE_WIDTH_MM);
+  if (direction === 'down') {
+    const tip = [x, y + ARROW_PENETRATE_MM];
+    const tail = [x, tip[1] - s];
+    doc.triangle(tip[0], tip[1], tail[0] - t, tail[1], tail[0] + t, tail[1], 'DF');
+  }
+  if (direction === 'up') {
+    const tip = [x, y - ARROW_PENETRATE_MM];
+    const tail = [x, tip[1] + s];
+    doc.triangle(tip[0], tip[1], tail[0] - t, tail[1], tail[0] + t, tail[1], 'DF');
+  }
+  if (direction === 'right') {
+    const tip = [x + ARROW_PENETRATE_MM, y];
+    const tail = [tip[0] - s, y];
+    doc.triangle(tip[0], tip[1], tail[0], tail[1] - t, tail[0], tail[1] + t, 'DF');
+  }
+  if (direction === 'left') {
+    const tip = [x - ARROW_PENETRATE_MM, y];
+    const tail = [tip[0] + s, y];
+    doc.triangle(tip[0], tip[1], tail[0], tail[1] - t, tail[0], tail[1] + t, 'DF');
+  }
+};
+
+const drawBranchLabel = (label, x, y, side) => {
+  doc.setFontSize(9.5);
+  doc.setFont(boldFont, 'bold');
+  let offsetX = 2.5;
+  let offsetY = 2.0;
+  if (side === 'exact') { offsetX = 0; offsetY = 0; }
+  else if (side === 'right') { offsetX = 2.2; offsetY = 2.2; }
+  else if (side === 'left') { offsetX = -4.2; offsetY = 2.2; }
+  else if (side === 'bottom') { offsetX = 2.0; offsetY = 3.4; }
+  else if (side === 'top') { offsetX = 2.0; offsetY = -1.4; }
+  doc.setTextColor(...PURE_BLACK);
+  doc.text(label, x + offsetX, y + offsetY, { align: 'center', baseline: 'middle' });
+  doc.setTextColor(...PURE_BLACK);
+  doc.setFont(regularFont, 'normal');
+};
+
+const setLineStyle = () => {
+  doc.setDrawColor(...PURE_BLACK);
+  doc.setLineWidth(LINE_WIDTH_MM);
+};
+
+const drawActivityTableAndFlows = (overrideStartY = null) => {
+  const minSpaceForActivityStart = 80;
+  const bottomMargin = 10;
+
+  let actualStartY = 10;
+  if (overrideStartY !== null && (pageHeight - overrideStartY - bottomMargin) >= minSpaceForActivityStart) {
+    actualStartY = overrideStartY;
+  } else {
+    doc.addPage();
+  }
+
+  const startY = actualStartY;
 
   const executors = Array.isArray(payload.executors) && payload.executors.length > 0
     ? payload.executors
@@ -306,6 +412,8 @@ const drawPageTwo = () => {
   const waktuSpans = {};
   let currentWaktu = '';
   let spanStartIdx = -1;
+  let currentSpanCount = 0;
+  const MAX_WAKTU_SPAN = 3;
 
   activities.forEach((activity, index) => {
     const waktu = String(activity.duration || '').trim();
@@ -313,18 +421,24 @@ const drawPageTwo = () => {
       waktuSpans[index] = 1;
       currentWaktu = '';
       spanStartIdx = -1;
+      currentSpanCount = 0;
       return;
     }
 
-    if (waktu === currentWaktu) {
+    const isSameGroup = waktu === currentWaktu && spanStartIdx !== -1;
+    const isSpanRoom = isSameGroup && currentSpanCount < MAX_WAKTU_SPAN;
+
+    if (isSpanRoom) {
       waktuSpans[spanStartIdx] += 1;
       waktuSpans[index] = 0;
+      currentSpanCount += 1;
       return;
     }
 
     currentWaktu = waktu;
     spanStartIdx = index;
     waktuSpans[index] = 1;
+    currentSpanCount = 1;
   });
 
   const bodyData = activities.map((activity, index) => {
@@ -339,7 +453,14 @@ const drawPageTwo = () => {
       row.push({
         content: activity.duration || '-',
         rowSpan: waktuSpans[index],
-        styles: { halign: 'center', valign: 'middle' },
+        styles: {
+          halign: 'center',
+          valign: 'middle',
+          fontSize: 8,
+          fontStyle: 'bold',
+          lineColor: [0, 0, 0],
+          lineWidth: 0.1,
+        },
       });
     }
 
@@ -375,17 +496,18 @@ const drawPageTwo = () => {
 
   const availableWidth = pageWidth - 20;
   const noWidth = 10;
-  const qualityWidth = 28;
+  const qualityWidth = 29;
   const durationWidth = 18;
-  const outputWidth = 26;
-  const notesWidth = 28;
+  const outputWidth = 28;
+  const notesWidth = 20;
   const remainingWidth = availableWidth - noWidth - qualityWidth - durationWidth - outputWidth - notesWidth;
-  const minKegiatanWidth = executors.length >= 5 ? 44 : 58;
-  let executorWidth = Math.min(24, Math.max(14, (remainingWidth * 0.42) / Math.max(executors.length, 1)));
+  const minKegiatanWidth = executors.length >= 5 ? 38 : 48;
+  const executorSharePct = 0.55;
+  let executorWidth = Math.min(28, Math.max(18, (remainingWidth * executorSharePct) / Math.max(executors.length, 1)));
   let kegiatanWidth = remainingWidth - (executorWidth * executors.length);
 
   if (kegiatanWidth < minKegiatanWidth) {
-    executorWidth = Math.max(12, (remainingWidth - minKegiatanWidth) / Math.max(executors.length, 1));
+    executorWidth = Math.max(16, (remainingWidth - minKegiatanWidth) / Math.max(executors.length, 1));
     kegiatanWidth = remainingWidth - (executorWidth * executors.length);
   }
 
@@ -413,22 +535,22 @@ const drawPageTwo = () => {
       fontStyle: 'normal',
       fontSize: 7,
       cellPadding: 1,
-      lineColor: 0,
-      lineWidth: 0.1,
+      lineColor: PURE_BLACK,
+      lineWidth: SHAPE_STROKE_MM,
       valign: 'middle',
       minCellHeight: 14,
-      textColor: 0,
+      textColor: PURE_BLACK,
     },
     headStyles: {
       font: boldFont,
       fontStyle: 'bold',
       fillColor: 240,
-      textColor: 0,
+      textColor: PURE_BLACK,
       halign: 'center',
       fontSize: 8,
     },
     columnStyles,
-    margin: { left: 10, right: 10 },
+    margin: { left: 10, right: 10, top: 10, bottom: 10 },
     tableWidth: availableWidth,
     didDrawCell: (data) => {
       if (data.section === 'body' && data.column.index >= bodyCellMap.pelaksanaStart && data.column.index < bodyCellMap.kelengkapan) {
@@ -452,161 +574,669 @@ const drawPageTwo = () => {
 
         const cx = data.cell.x + (data.cell.width / 2);
         const cy = data.cell.y + (data.cell.height / 2);
-        const size = 6;
-        doc.setDrawColor(...shapeStroke);
-        doc.setFillColor(...shapeFill);
 
         if (node.type === 'start') {
-          doc.roundedRect(cx - size, cy - (size / 2), size * 2, size, 2, 2, 'FD');
-          doc.setTextColor(255, 255, 255);
-          doc.text('Start', cx, cy, { align: 'center', baseline: 'middle' });
-          doc.setTextColor(0, 0, 0);
+          drawStartEndShape(cx, cy, NODE_SIZE, 'Start');
         } else if (node.type === 'end') {
-          doc.roundedRect(cx - size, cy - (size / 2), size * 2, size, 2, 2, 'FD');
-          doc.setTextColor(255, 255, 255);
-          doc.text('End', cx, cy, { align: 'center', baseline: 'middle' });
-          doc.setTextColor(0, 0, 0);
+          drawStartEndShape(cx, cy, NODE_SIZE, 'End');
         } else if (node.type === 'process') {
-          doc.rect(cx - size, cy - (size / 2), size * 2, size, 'FD');
+          drawProcessShape(cx, cy, NODE_SIZE);
         } else if (node.type === 'decision') {
-          drawDiamond(cx, cy, size * 1.2, node.label || '');
+          drawDiamond(cx, cy, NODE_SIZE * DIAMOND_SCALE, node.label || '');
         }
       }
     },
   });
 
-  doc.setDrawColor(0);
-  doc.setLineWidth(0.2);
+  const totalPages = doc.getNumberOfPages();
 
-  const drawArrow = (x, y, direction) => {
-    const s = 1.2;
-    doc.setFillColor(0, 0, 0);
-    if (direction === 'down') doc.triangle(x, y, x - (s / 2), y - s, x + (s / 2), y - s, 'F');
-    if (direction === 'up') doc.triangle(x, y, x - (s / 2), y + s, x + (s / 2), y + s, 'F');
-    if (direction === 'right') doc.triangle(x, y, x - s, y - (s / 2), x - s, y + (s / 2), 'F');
-    if (direction === 'left') doc.triangle(x, y, x + s, y - (s / 2), x + s, y + (s / 2), 'F');
+  const slotTrackers = {};
+  const ensureSlotTracker = (rIdx) => {
+    if (!slotTrackers[rIdx]) {
+      const nodesR = Array.isArray(activities[rIdx]?.flow_nodes) ? activities[rIdx].flow_nodes : [];
+      const t = {};
+      nodesR.forEach((n) => {
+        t[n.executor_key] = {
+          top: { count: 0, positions: { mid: false, upper: false, lower: false } },
+          right: { count: 0, positions: { mid: false, upper: false, lower: false } },
+          bottom: { count: 0, positions: { mid: false, upper: false, lower: false } },
+          left: { count: 0, positions: { mid: false, upper: false, lower: false } },
+        };
+      });
+      slotTrackers[rIdx] = t;
+    }
+    return slotTrackers[rIdx];
   };
 
-  const drawBranchLabel = (label, x, y, side) => {
-    doc.setFontSize(9);
-    doc.setFont(boldFont, 'bold');
-    const offsetX = side === 'right' ? 4.2 : -5.2;
-    const offsetY = -2.2;
-    doc.setTextColor(0, 90, 170);
-    doc.text(label, x + offsetX, y + offsetY, { align: 'center', baseline: 'middle' });
-    doc.setTextColor(0, 0, 0);
-    doc.setFont(regularFont, 'normal');
+  const acquireSlot = (rIdx, execKey, side) => {
+    const track = ensureSlotTracker(rIdx);
+    const t = (track[execKey] = track[execKey] || {
+      top: { count: 0, positions: { mid: false, upper: false, lower: false } },
+      right: { count: 0, positions: { mid: false, upper: false, lower: false } },
+      bottom: { count: 0, positions: { mid: false, upper: false, lower: false } },
+      left: { count: 0, positions: { mid: false, upper: false, lower: false } },
+    });
+    const s = t[side];
+    s.count++;
+    if (s.count === 1 || !s.positions.mid) {
+      s.positions.mid = true;
+      return 'mid';
+    }
+    if (!s.positions.upper) {
+      s.positions.upper = true;
+      return 'upper';
+    }
+    s.positions.lower = true;
+    return 'lower';
   };
 
-  activities.forEach((activity, rowIndex) => {
-    const nodes = Array.isArray(activity.flow_nodes) ? activity.flow_nodes : [];
+  const pointOnSide = (side, slot, cx, cy, offsets) => {
+    const delta = 2.3;
+    if (side === 'right') {
+      let y = cy;
+      if (slot === 'upper') y = cy - delta;
+      else if (slot === 'lower') y = cy + delta;
+      return { x: cx + offsets.right, y };
+    }
+    if (side === 'left') {
+      let y = cy;
+      if (slot === 'upper') y = cy - delta;
+      else if (slot === 'lower') y = cy + delta;
+      return { x: cx - offsets.left, y };
+    }
+    if (side === 'top') {
+      let x = cx;
+      if (slot === 'upper') x = cx - delta;
+      else if (slot === 'lower') x = cx + delta;
+      return { x, y: cy - offsets.top };
+    }
+    let x = cx;
+    if (slot === 'upper') x = cx - delta;
+    else if (slot === 'lower') x = cx + delta;
+    return { x, y: cy + offsets.bottom };
+  };
 
-    for (let nodeIndex = 0; nodeIndex < nodes.length; nodeIndex += 1) {
-      const currentNode = nodes[nodeIndex];
-      const fromKey = `${rowIndex}-${currentNode.executor_key}`;
-      const from = cellCoordinates[fromKey];
-      if (!from) continue;
+  const arrowDirForEntry = (entrySide) => {
+    if (entrySide === 'left') return 'right';
+    if (entrySide === 'right') return 'left';
+    if (entrySide === 'top') return 'down';
+    return 'up';
+  };
 
-      doc.setPage(from.page);
-      const fx = from.x + (from.w / 2);
-      const fy = from.y + (from.h / 2);
-      const size = 6;
-      const diamondScale = 1.2;
+  const drawConnectorV2 = (
+    fromRIdx, fromExecKey, toRIdx, toExecKey,
+    exitSide, entrySide,
+    branchLabel = null
+  ) => {
+    const fromKeyC = `${fromRIdx}-${fromExecKey}`;
+    const toKeyC = `${toRIdx}-${toExecKey}`;
+    const fromC = cellCoordinates[fromKeyC];
+    const toC = cellCoordinates[toKeyC];
+    if (!fromC || !toC) return;
 
-      if (currentNode.type === 'decision') {
-        const hasExplicitYesTarget = hasNumericTarget(currentNode.yes_target);
-        const hasExplicitNoTarget = hasNumericTarget(currentNode.no_target);
-        const branchTargets = [
-          { label: 'Y', targetIndex: Number(currentNode.yes_target || 0) - 1, side: 'right', targetExecutorKey: currentNode.yes_target_executor_key || '' },
-          { label: 'T', targetIndex: Number(currentNode.no_target || 0) - 1, side: 'left', targetExecutorKey: currentNode.no_target_executor_key || '' },
-        ];
+    const samePage = fromC.page === toC.page;
+    if (!samePage) return;
 
-        branchTargets.forEach((branch) => {
-          const targetMeta = firstTargetMeta(branch.targetIndex, branch.targetExecutorKey);
-          if (!targetMeta) return;
-          const to = cellCoordinates[targetMeta.key];
-          if (!to) return;
+    doc.setPage(fromC.page);
+    setLineStyle();
 
-          doc.setPage(from.page);
-          const tx = to.x + (to.w / 2);
-          const ty = to.y + (to.h / 2);
-          const startX = branch.side === 'right' ? fx + (size * diamondScale) : fx - (size * diamondScale);
-          const startY = fy;
-          const targetNode = targetMeta.node;
-          const targetTop = ty - ((targetNode.type === 'decision') ? (size * diamondScale * 0.8) : (size / 2));
+    const fromNodeType = (activities[fromRIdx]?.flow_nodes || []).find((n) => n.executor_key === fromExecKey)?.type || 'process';
+    const toNodeType = (activities[toRIdx]?.flow_nodes || []).find((n) => n.executor_key === toExecKey)?.type || 'process';
+    const fromOffsetsC = shapeEdgeOffsets(fromNodeType);
+    const toOffsetsC = shapeEdgeOffsets(toNodeType);
 
-          drawBranchLabel(branch.label, startX, startY - 0.5, branch.side);
+    const fxC = fromC.x + (fromC.w / 2);
+    const fyC = fromC.y + (fromC.h / 2);
+    const txC = toC.x + (toC.w / 2);
+    const tyC = toC.y + (toC.h / 2);
 
-          if (from.page === to.page) {
-            if (branch.targetIndex === rowIndex && branch.side === 'left') {
-              const laneX = Math.min(startX - 3, tx - 8);
-              const targetLeftX = tx - ((targetNode.type === 'decision') ? (size * diamondScale) : size);
-              const entryY = ty + 2;
-              doc.line(startX, startY, laneX, startY);
-              doc.line(laneX, startY, laneX, entryY);
-              doc.line(laneX, entryY, targetLeftX, entryY);
-              drawArrow(targetLeftX, entryY, 'right');
-            } else if (branch.targetIndex >= rowIndex) {
-              const midY = ty - 8;
-              doc.line(startX, startY, startX, midY);
-              doc.line(startX, midY, tx, midY);
-              doc.line(tx, midY, tx, targetTop);
-              drawArrow(tx, targetTop, 'down');
-            } else {
-              const laneX = Math.min(startX - 3, tx - 8);
-              const targetLeftX = tx - ((targetNode.type === 'decision') ? (size * diamondScale) : size);
-              const entryY = ty + (branch.label === 'T' ? 2 : 0);
-              doc.line(startX, startY, laneX, startY);
-              doc.line(laneX, startY, laneX, entryY);
-              doc.line(laneX, entryY, targetLeftX, entryY);
-              drawArrow(targetLeftX, entryY, 'right');
-            }
-          }
-        });
+    const exSlot = acquireSlot(fromRIdx, fromExecKey, exitSide);
+    const enSlot = acquireSlot(toRIdx, toExecKey, entrySide);
+    const exitP = pointOnSide(exitSide, exSlot, fxC, fyC, fromOffsetsC);
+    const entryP = pointOnSide(entrySide, enSlot, txC, tyC, toOffsetsC);
+
+    const dirSign = { right: 1, left: -1, top: -1, bottom: 1 };
+    const isVExit = exitSide === 'top' || exitSide === 'bottom';
+    const isVEntry = entrySide === 'top' || entrySide === 'bottom';
+    const isShortStepCase = (!isVExit && isVEntry) || (isVExit && !isVEntry);
+    const straightStep = isShortStepCase ? 1.8 : 2.8;
+    const approach = isShortStepCase ? 2.0 : 3.2;
+    let stepX = exitP.x;
+    let stepY = exitP.y;
+    if (!isVExit) stepX += dirSign[exitSide] * straightStep;
+    else stepY += dirSign[exitSide] * straightStep;
+    // SNAKE: Pastikan stepX/stepY TIDAK dekat border cell (1mm zona aman sekitar garis tabel)
+    const fromCellRight = fromC.x + fromC.w;
+    const fromCellLeft  = fromC.x;
+    const fromCellBot   = fromC.y + fromC.h;
+    const fromCellTop   = fromC.y;
+    if (!isVExit && exitSide === 'right' && stepX >= (fromCellRight - 0.8) && stepX <= (fromCellRight + 1.2)) { stepX = fromCellRight + 1.8; }
+    if (!isVExit && exitSide === 'left'  && stepX <= (fromCellLeft  + 0.8) && stepX >= (fromCellLeft  - 1.2)) { stepX = fromCellLeft  - 1.8; }
+    if (isVExit  && exitSide === 'bottom'&& stepY >= (fromCellBot   - 0.8) && stepY <= (fromCellBot   + 1.2)) { stepY = fromCellBot   + 1.8; }
+    if (isVExit  && exitSide === 'top'   && stepY <= (fromCellTop   + 0.8) && stepY >= (fromCellTop   - 1.2)) { stepY = fromCellTop   - 1.8; }
+
+    // ---- Branch Label: Menjauhi shape, garis konektor, dan border cell ----
+    if (branchLabel) {
+      let lx = exitP.x, ly = exitP.y;
+      const fromCellRight = fromC.x + fromC.w;
+      const fromCellLeft  = fromC.x;
+      const fromCellBot   = fromC.y + fromC.h;
+      if (!isVExit) {
+        lx = exitP.x + (dirSign[exitSide] * 5.8);
+        const maxSafeX = fromCellRight - 1.6;
+        const minSafeX = fromCellLeft + 1.6;
+        if (lx > maxSafeX) lx = maxSafeX;
+        if (lx < minSafeX) lx = minSafeX;
+        ly = exitP.y + 3.5;
+      } else if (exitSide === 'bottom') {
+        lx = exitP.x + 2.5;
+        ly = exitP.y + 1.8;
+        const maxSafeY = fromCellBot - 2.0;
+        if (ly > maxSafeY) ly = maxSafeY;
+      } else {
+        lx = exitP.x + 2.5;
+        ly = (exitP.y + stepY) / 2;
       }
+      drawBranchLabel(branchLabel, lx, ly, 'exact');
+    }
 
-      if (nodeIndex < nodes.length - 1) {
-        const nextNode = nodes[nodeIndex + 1];
-        const toKey = `${rowIndex}-${nextNode.executor_key}`;
-        const to = cellCoordinates[toKey];
-        if (to && from.page === to.page) {
-          const hasExplicitYesTarget = currentNode.type === 'decision' && hasNumericTarget(currentNode.yes_target);
-          if (hasExplicitYesTarget) {
-            continue;
-          }
+    const sameRow = fromRIdx === toRIdx;
+    const sameCol = fromExecKey === toExecKey;
 
-          doc.setPage(from.page);
-          const tx = to.x + (to.w / 2);
-          const ty = to.y + (to.h / 2);
+    const L = (x1, y1, x2, y2) => {
+      if (Math.abs(x1 - x2) < 0.01 && Math.abs(y1 - y2) < 0.01) return;
+      // Anti-diagonal safeguard: jika x BEDA DAN y BEDA, split jadi horizontal + vertical (elbow)
+      if (Math.abs(x1 - x2) > 0.01 && Math.abs(y1 - y2) > 0.01) {
+        doc.line(x1, y1, x2, y1);
+        doc.line(x2, y1, x2, y2);
+        return;
+      }
+      doc.line(x1, y1, x2, y2);
+    };
 
-          let sX = fx + size;
-          let eX = tx - size;
-          if (currentNode.type === 'decision') sX = fx + (size * diamondScale);
-          if (nextNode.type === 'decision') {
-            const diamondV = size * diamondScale * 0.8;
-            const targetTopY = ty - diamondV;
-            const laneY = Math.min(fy, targetTopY) - 6;
-            doc.line(sX, fy, sX, laneY);
-            doc.line(sX, laneY, tx, laneY);
-            doc.line(tx, laneY, tx, targetTopY);
-            if (currentNode.type === 'decision') {
-              drawBranchLabel('Y', sX, fy, 'right');
-            }
-            drawArrow(tx, targetTopY, 'down');
-          } else {
-            const isTargetLastNode = (nodeIndex + 1) === (nodes.length - 1);
-            const incomingOffset = (isTargetLastNode && rowIndex < activities.length - 1) ? -2 : 0;
-            doc.line(sX, fy + incomingOffset, eX, ty + incomingOffset);
-            if (currentNode.type === 'decision') {
-              drawBranchLabel('Y', sX, fy + incomingOffset, 'right');
-            }
-            drawArrow(eX, ty + incomingOffset, 'right');
+    // Pre-shape point: di sumbu axis entry, mundur approach
+    //   left/right entry → y SAMA entryP.y (supaya horizontal terakhir)
+    //   top/bottom entry → x SAMA entryP.x (supaya vertikal terakhir)
+    let preShapeX = entryP.x;
+    let preShapeY = entryP.y;
+    if (entrySide === 'left') { preShapeX = entryP.x - approach; preShapeY = entryP.y; }
+    if (entrySide === 'right') { preShapeX = entryP.x + approach; preShapeY = entryP.y; }
+    if (entrySide === 'top') { preShapeY = entryP.y - approach; preShapeX = entryP.x; }
+    if (entrySide === 'bottom') { preShapeY = entryP.y + approach; preShapeX = entryP.x; }
+    // SNAKE approach: preShapeX/Y juga harus menjauhi border target cell agar ELBOW approach tidak tepat di garis tabel
+    const toCellRight = toC.x + toC.w;
+    const toCellLeft  = toC.x;
+    const toCellBot   = toC.y + toC.h;
+    const toCellTop   = toC.y;
+    if (!isVEntry && entrySide === 'right' && preShapeX >= (toCellRight - 0.8) && preShapeX <= (toCellRight + 1.2)) { preShapeX = toCellRight + 1.8; }
+    if (!isVEntry && entrySide === 'left'  && preShapeX <= (toCellLeft  + 0.8) && preShapeX >= (toCellLeft  - 1.2)) { preShapeX = toCellLeft  - 1.8; }
+    if (isVEntry  && entrySide === 'bottom'&& preShapeY >= (toCellBot   - 0.8) && preShapeY <= (toCellBot   + 1.2)) { preShapeY = toCellBot   + 1.8; }
+    if (isVEntry  && entrySide === 'top'   && preShapeY <= (toCellTop   + 0.8) && preShapeY >= (toCellTop   - 1.2)) { preShapeY = toCellTop   - 1.8; }
+
+    if (sameRow && sameCol) {
+      L(exitP.x, exitP.y, stepX, stepY);
+      if (!isVExit && !isVEntry) {
+        // HH same-col
+        L(stepX, stepY, stepX, entryP.y);
+        L(stepX, entryP.y, preShapeX, entryP.y);
+        L(preShapeX, entryP.y, entryP.x, entryP.y);
+      } else if (isVExit && isVEntry) {
+        // VV same-col
+        L(stepX, stepY, entryP.x, stepY);
+        L(entryP.x, stepY, entryP.x, preShapeY);
+        L(entryP.x, preShapeY, entryP.x, entryP.y);
+      } else if (!isVExit && isVEntry) {
+        // HV same-col: exit left/right → entry top/bottom (Process→Decision)
+        // VERTIKAL DULU ke preShapeY, baru HORIZONTAL ke entryP.x, lalu vertikal terakhir
+        L(stepX, stepY, stepX, preShapeY);
+        if (Math.abs(stepX - entryP.x) > 0.015) L(stepX, preShapeY, entryP.x, preShapeY);
+        L(entryP.x, preShapeY, entryP.x, entryP.y);
+      } else {
+        // VH same-col: exit top/bottom → entry left/right
+        // HORIZONTAL DULU ke preShapeX, baru VERTIKAL ke entryP.y, lalu horizontal terakhir
+        L(stepX, stepY, preShapeX, stepY);
+        if (Math.abs(stepY - entryP.y) > 0.015) L(preShapeX, stepY, preShapeX, entryP.y);
+        L(preShapeX, entryP.y, entryP.x, entryP.y);
+      }
+      drawArrow(entryP.x, entryP.y, arrowDirForEntry(entrySide));
+      return;
+    }
+
+    if (!isVExit && !isVEntry) {
+      // HH: exit left/right → entry left/right
+      const laneY = exitP.y;
+      L(exitP.x, exitP.y, stepX, laneY);
+      if (Math.abs(stepX - preShapeX) > 0.1) L(stepX, laneY, preShapeX, laneY);
+      // Belok VERTICAL dulu ke y=entryP.y (pada approach x point preShapeX, tepat di belakang shape)
+      L(preShapeX, laneY, preShapeX, entryP.y);
+      // Horizontal PENDEK TERAKHIR menuju edge shape left/right (y SAMA: guaranteed orthogonal)
+      L(preShapeX, entryP.y, entryP.x, entryP.y);
+      drawArrow(entryP.x, entryP.y, arrowDirForEntry(entrySide));
+      return;
+    }
+
+    if (isVExit && !isVEntry) {
+      // VH: exit top/bottom → entry left/right
+      const laneY = stepY;
+      L(exitP.x, exitP.y, stepX, stepY);
+      L(stepX, stepY, stepX, laneY);
+      if (Math.abs(stepX - preShapeX) > 0.1) L(stepX, laneY, preShapeX, laneY);
+      L(preShapeX, laneY, preShapeX, entryP.y);
+      L(preShapeX, entryP.y, entryP.x, entryP.y);
+      drawArrow(entryP.x, entryP.y, arrowDirForEntry(entrySide));
+      return;
+    }
+
+    if (!isVExit && isVEntry) {
+      // HV: exit left/right → entry top/bottom
+      L(exitP.x, exitP.y, stepX, stepY);
+      const turnX = stepX;
+      if (entrySide === 'top' || entrySide === 'bottom') {
+        L(stepX, stepY, turnX, preShapeY);
+        if (Math.abs(turnX - entryP.x) > 0.15) L(turnX, preShapeY, entryP.x, preShapeY);
+        L(entryP.x, preShapeY, entryP.x, entryP.y);
+      } else {
+        const laneY = entryP.y;
+        L(stepX, stepY, turnX, laneY);
+        if (Math.abs(turnX - entryP.x) > 0.1) L(turnX, laneY, entryP.x, laneY);
+        L(entryP.x, laneY, entryP.x, entryP.y);
+      }
+      drawArrow(entryP.x, entryP.y, arrowDirForEntry(entrySide));
+      return;
+    }
+
+    // isVExit && isVEntry
+    const laneY = stepY;
+    L(exitP.x, exitP.y, stepX, stepY);
+    L(stepX, stepY, stepX, laneY);
+    if (Math.abs(stepX - entryP.x) > 0.1) L(stepX, laneY, entryP.x, laneY);
+    if (entrySide === 'top' || entrySide === 'bottom') {
+      const preY = preShapeY;
+      if (Math.abs(laneY - preY) > 0.3) L(entryP.x, laneY, entryP.x, preY);
+      L(entryP.x, preY, entryP.x, entryP.y);
+    } else {
+      L(entryP.x, laneY, entryP.x, entryP.y);
+    }
+    drawArrow(entryP.x, entryP.y, arrowDirForEntry(entrySide));
+  };
+
+  const drawSamePageFlow = () => {
+    activities.forEach((activity, rowIndex) => {
+      ensureSlotTracker(rowIndex);
+    });
+
+    // Mark cross-row entry/exit for first/last node per row
+    activities.forEach((activity, rowIndex) => {
+      const nodes = Array.isArray(activity.flow_nodes) ? activity.flow_nodes : [];
+      if (nodes.length === 0) return;
+      const firstN = nodes[0];
+      const lastN = nodes[nodes.length - 1];
+
+      if (rowIndex > 0) {
+        const prevAct = activities[rowIndex - 1];
+        const prevNodes = Array.isArray(prevAct?.flow_nodes) ? prevAct.flow_nodes : [];
+        if (prevNodes.length > 0) {
+          const prevLast = prevNodes[prevNodes.length - 1];
+          const hasExplicitYes = prevLast.type === 'decision' && hasNumericTarget(prevLast.yes_target);
+          if (!hasExplicitYes) {
+            acquireSlot(rowIndex - 1, prevLast.executor_key, 'bottom');
+            acquireSlot(rowIndex, firstN.executor_key, 'top');
           }
         }
       }
-    }
+    });
 
-    if (rowIndex < activities.length - 1) {
+    const buildSideRule = (
+      fromRoleIdx, toRoleIdx, fromType, toType,
+      sameRow, sameActivityHasPD, processColsThisRow = [], decisionColsThisRow = [],
+      isNoBranch = false, partnerInfo = null,
+      toNextActivity = false,
+    ) => {
+      if (toType === 'decision') {
+        return [toRoleIdx > fromRoleIdx ? 'right' : (toRoleIdx < fromRoleIdx ? 'left' : 'bottom'), 'top'];
+      }
+      if (sameActivityHasPD && fromType === 'decision' && partnerInfo !== null) {
+        const processLeft = partnerInfo.processLeftOfDecision === true;
+        const processRight = partnerInfo.processLeftOfDecision === false;
+        const inSameRowProcesses = processColsThisRow.includes(toRoleIdx);
+        if (inSameRowProcesses && sameRow) {
+          if (processLeft) {
+            return [isNoBranch ? 'bottom' : 'right',
+                    isNoBranch ? 'bottom' : (toRoleIdx > fromRoleIdx ? 'left' : 'right')];
+          }
+          // Process RIGHT (simetris)
+          return [isNoBranch ? 'bottom' : 'left',
+                  isNoBranch ? 'bottom' : (toRoleIdx > fromRoleIdx ? 'left' : 'right')];
+        }
+        if (!inSameRowProcesses && isNoBranch && !sameRow) {
+          // Point 3 & 5: T ke kegiatan LUAR (sebelumnya)
+          return [processLeft ? 'right' : 'left', 'top'];
+        }
+      }
+      if (fromType === 'decision') {
+        const exit = toRoleIdx > fromRoleIdx ? 'right' : (toRoleIdx < fromRoleIdx ? 'left' : 'bottom');
+        const entry = (exit === 'right') ? 'left' : (exit === 'left') ? 'right' : 'top';
+        const res = [exit, entry];
+        if (toNextActivity) res[1] = 'top';
+        return res;
+      }
+      if (toRoleIdx > fromRoleIdx) {
+        const res = ['right', 'left'];
+        if (toNextActivity) res[1] = 'top';
+        return res;
+      }
+      if (toRoleIdx < fromRoleIdx) {
+        const res = ['left', 'right'];
+        if (toNextActivity) res[1] = 'top';
+        return res;
+      }
+      const res = ['bottom', 'top'];
+      if (toNextActivity) res[1] = 'top';
+      return res;
+    };
+
+    const findDecisionPartnerNode = (nodes, decisionExecKey) => {
+      const processNodes = nodes.filter((n) => ['process','start','end'].includes(n.type));
+      const decisionNode = nodes.find((n) => n.executor_key === decisionExecKey);
+      if (!decisionNode) return null;
+      const decisionCol = getRoleIndex(decisionExecKey);
+      let nearestProcess = null;
+      let nearestDist = null;
+      let nearestCol = null;
+      for (const p of processNodes) {
+        const pc = getRoleIndex(p.executor_key);
+        const d = Math.abs(pc - decisionCol);
+        if (nearestDist === null || d < nearestDist) {
+          nearestDist = d;
+          nearestProcess = p;
+          nearestCol = pc;
+        }
+      }
+      if (nearestProcess === null) return null;
+      return {
+        process: nearestProcess,
+        processExecKey: String(nearestProcess.executor_key),
+        processCol: nearestCol,
+        processLeftOfDecision: nearestCol < decisionCol,
+        decisionCol,
+      };
+    };
+
+    activities.forEach((activity, rowIndex) => {
+      const nodes = Array.isArray(activity.flow_nodes) ? activity.flow_nodes : [];
+
+      const hasProcessInThisRow = nodes.some((n) => ['process','start','end'].includes(n.type));
+      const hasDecisionInThisRow = nodes.some((n) => n.type === 'decision');
+      const sameActivityHasPD = hasProcessInThisRow && hasDecisionInThisRow;
+      const processColsThisRow = nodes
+        .filter((n) => ['process','start','end'].includes(n.type))
+        .map((n) => getRoleIndex(n.executor_key));
+      const decisionColsThisRow = nodes
+        .filter((n) => n.type === 'decision')
+        .map((n) => getRoleIndex(n.executor_key));
+
+      for (let nodeIndex = 0; nodeIndex < nodes.length; nodeIndex += 1) {
+        const currentNode = nodes[nodeIndex];
+        const isDecision = currentNode.type === 'decision';
+        const hasExplicitYesTarget = isDecision && hasNumericTarget(currentNode.yes_target);
+        const hasExplicitNoTarget = isDecision && hasNumericTarget(currentNode.no_target);
+
+        if (isDecision && hasExplicitYesTarget) {
+          const yTargetIdx = Number(currentNode.yes_target) - 1;
+          const yExec = String(currentNode.yes_target_executor_key || '');
+          const yTargetMeta = firstTargetMeta(yTargetIdx, yExec);
+          if (yTargetMeta) {
+            const toKey = `${yTargetIdx}-${yTargetMeta.node.executor_key}`;
+            if (cellCoordinates[toKey]) {
+              const toRoleIdx = getRoleIndex(yTargetMeta.node.executor_key);
+              const fromRoleIdx = getRoleIndex(currentNode.executor_key);
+              const sameRow = yTargetIdx === rowIndex;
+              const toType = yTargetMeta.node.type;
+              const fromType = currentNode.type;
+
+              const tIdx = hasExplicitNoTarget ? (Number(currentNode.no_target) - 1) : null;
+              const tExecKey = hasExplicitNoTarget ? String(currentNode.no_target_executor_key || '') : null;
+              const tIsSameActivity = (tIdx !== null && tIdx === rowIndex);
+              const tToPrior = (tIdx !== null && !tIsSameActivity && tIdx < rowIndex);
+              let partner = null;
+              if (sameActivityHasPD) partner = findDecisionPartnerNode(nodes, currentNode.executor_key);
+              let tBackToPartnerProcess = false;
+              if (partner && tIsSameActivity && tExecKey === partner.processExecKey) {
+                tBackToPartnerProcess = true;
+              }
+
+              let [yExit, yEntry] = buildSideRule(
+                fromRoleIdx, toRoleIdx, fromType, toType,
+                sameRow, sameActivityHasPD, processColsThisRow, decisionColsThisRow,
+                false, partner
+              );
+              let [tExit, tEntry] = [null, null];
+              if (hasExplicitNoTarget && tIdx !== null) {
+                const tMeta = firstTargetMeta(tIdx, tExecKey);
+                if (tMeta) {
+                  const tToRoleIdx = getRoleIndex(tMeta.node.executor_key);
+                  const tFromRoleIdx = fromRoleIdx;
+                  const tSameRow = tIdx === rowIndex;
+                  const tToType = tMeta.node.type;
+                  [tExit, tEntry] = buildSideRule(
+                    tFromRoleIdx, tToRoleIdx, fromType, tToType,
+                    tSameRow, sameActivityHasPD, processColsThisRow, decisionColsThisRow,
+                    true, partner
+                  );
+                }
+              }
+
+              if (sameActivityHasPD && partner) {
+                if (tBackToPartnerProcess) {
+                  // Point 2 / 4: T BALIK ke Process (partner) → T dari BOTTOM decision
+                  // Y dari KANAN (Process LEFT) atau KIRI (Process RIGHT)
+                  if (partner.processLeftOfDecision) {
+                    yExit = 'right';
+                  } else {
+                    yExit = 'left';
+                  }
+                  tExit = 'bottom';
+                  tEntry = 'bottom';
+                } else if (tToPrior) {
+                  // Point 3 / 5: T ke KEGIATAN SEBELUMNYA → T dari KANAN (P-left) atau KIRI (P-right)
+                  // Y dari BOTTOM ke kegiatan berikutnya
+                  if (partner.processLeftOfDecision) {
+                    tExit = 'right';
+                  } else {
+                    tExit = 'left';
+                  }
+                  tEntry = 'top';
+                  yExit = 'bottom';
+                  yEntry = 'top';
+                } else {
+                  // T ke kegiatan BERIKUTNYA atau target lain → default pola simetris
+                  if (partner.processLeftOfDecision) {
+                    tExit = 'left';
+                  } else {
+                    tExit = 'right';
+                  }
+                  tEntry = 'top';
+                  yExit = 'bottom';
+                  yEntry = 'top';
+                }
+
+                // ATURAN BARU USER: apapun branch-nya, KE ROW BAWAH (idx > rowIndex) → entry = top
+                // TIDAK PAKAI sameRow filter! (karena next-row berarti sameRow=FALSE)
+                if (yTargetIdx > rowIndex) yEntry = 'top';
+                if (hasExplicitNoTarget && tIdx !== null && tIdx > rowIndex && tEntry !== null) tEntry = 'top';
+              } else {
+                // BUKAN same-activity PD-row: pastikan ke next-row entry juga TOP
+                if (yTargetIdx > rowIndex) yEntry = 'top';
+                if (hasExplicitNoTarget && tIdx !== null && tIdx > rowIndex && tEntry !== null) tEntry = 'top';
+              }
+
+              drawConnectorV2(rowIndex, currentNode.executor_key, yTargetIdx, yTargetMeta.node.executor_key, yExit, yEntry, 'Y');
+            }
+          }
+        }
+
+        if (isDecision && hasExplicitNoTarget) {
+          const tTargetIdx = Number(currentNode.no_target) - 1;
+          const tExec = String(currentNode.no_target_executor_key || '');
+          const tTargetMeta = firstTargetMeta(tTargetIdx, tExec);
+          if (tTargetMeta) {
+            const toKey = `${tTargetIdx}-${tTargetMeta.node.executor_key}`;
+            if (cellCoordinates[toKey]) {
+              // Already computed tExit/tEntry in yes-branch above? Use buildSideRule again for safety
+              const toRoleIdx = getRoleIndex(tTargetMeta.node.executor_key);
+              const fromRoleIdx = getRoleIndex(currentNode.executor_key);
+              const sameRow = tTargetIdx === rowIndex;
+              const toType = tTargetMeta.node.type;
+              const fromType = currentNode.type;
+
+              const yIdx = hasExplicitYesTarget ? (Number(currentNode.yes_target) - 1) : null;
+              const yIsSameActivity = (yIdx !== null && yIdx === rowIndex);
+              const yToPrior = (yIdx !== null && !yIsSameActivity && yIdx < rowIndex);
+              let partner = null;
+              if (sameActivityHasPD) partner = findDecisionPartnerNode(nodes, currentNode.executor_key);
+              let tBackToPartnerProcess = false;
+              if (partner && sameRow && tExec === partner.processExecKey) {
+                tBackToPartnerProcess = true;
+              }
+
+              let [tExit, tEntry] = buildSideRule(
+                fromRoleIdx, toRoleIdx, fromType, toType,
+                sameRow, sameActivityHasPD, processColsThisRow, decisionColsThisRow,
+                true, partner
+              );
+
+              if (sameActivityHasPD && partner) {
+                if (tBackToPartnerProcess) {
+                  // POINT 2/4: T BALIK ke Process → T dari BOTTOM decision, entry di BOTTOM Process
+                  tExit = 'bottom';
+                  tEntry = 'bottom';
+                } else if (!sameRow && tTargetIdx < rowIndex) {
+                  // POINT 3/5: T ke LUAR KEGIATAN SEBELUMNYA
+                  tExit = partner.processLeftOfDecision ? 'right' : 'left';
+                  tEntry = 'top';
+                } else if (!sameRow && tTargetIdx > rowIndex) {
+                  // BARU: T ke KEGIATAN BERIKUTNYA (row bawah) → entry pasti TOP
+                  tExit = partner.processLeftOfDecision ? 'left' : 'right';
+                  tEntry = 'top';
+                }
+              } else if (!sameActivityHasPD) {
+                const track = ensureSlotTracker(rowIndex);
+                const fromCell = track[currentNode.executor_key];
+                if (fromCell && fromCell[tExit] && fromCell[tExit].count > 0) {
+                  const alts = ['right', 'left', 'bottom', 'top'];
+                  for (const alt of alts) {
+                    if (!fromCell[alt] || fromCell[alt].count === 0) { tExit = alt; break; }
+                  }
+                }
+                if (tExit === 'top' || tExit === 'bottom') {
+                  tEntry = 'top';
+                } else {
+                  tEntry = tExit === 'right' ? 'left' : 'right';
+                }
+              }
+
+              // Global enforce: setiap koneksi ke row BAWAH → entry = TOP
+              if (!sameRow && tTargetIdx > rowIndex) {
+                tEntry = 'top';
+              }
+
+              drawConnectorV2(rowIndex, currentNode.executor_key, tTargetIdx, tTargetMeta.node.executor_key, tExit, tEntry, 'T');
+            }
+          }
+        }
+
+        if (nodeIndex < nodes.length - 1) {
+          const nextNode = nodes[nodeIndex + 1];
+          if (currentNode.executor_key === nextNode.executor_key) continue;
+          if (isDecision && hasExplicitYesTarget) continue;
+
+          const fromKeyC = `${rowIndex}-${currentNode.executor_key}`;
+          const toKeyC = `${rowIndex}-${nextNode.executor_key}`;
+          const fromC = cellCoordinates[fromKeyC];
+          const toC = cellCoordinates[toKeyC];
+          if (!fromC || !toC) continue;
+          if (fromC.page !== toC.page) continue;
+
+          const toRoleIdx = getRoleIndex(nextNode.executor_key);
+          const fromRoleIdx = getRoleIndex(currentNode.executor_key);
+          const nextType = nextNode.type;
+          const curType = currentNode.type;
+
+          let [exitSide, entrySide] = buildSideRule(
+            fromRoleIdx, toRoleIdx, curType, nextType,
+            true, sameActivityHasPD, processColsThisRow, decisionColsThisRow,
+            false, null
+          );
+
+          const label = curType === 'decision' ? 'Y' : null;
+          drawConnectorV2(rowIndex, currentNode.executor_key, rowIndex, nextNode.executor_key, exitSide, entrySide, label);
+        }
+      }
+
+      if (rowIndex < activities.length - 1) {
+        const nodes = Array.isArray(activity.flow_nodes) ? activity.flow_nodes : [];
+        const nextActivity = activities[rowIndex + 1];
+        const nextNodes = Array.isArray(nextActivity.flow_nodes) ? nextActivity.flow_nodes : [];
+        if (nodes.length === 0 || nextNodes.length === 0) return;
+
+        const lastNode = nodes[nodes.length - 1];
+        const firstNextNode = nextNodes[0];
+        const fromKeyC = `${rowIndex}-${lastNode.executor_key}`;
+        const toKeyC = `${rowIndex + 1}-${firstNextNode.executor_key}`;
+        const fromC = cellCoordinates[fromKeyC];
+        const toC = cellCoordinates[toKeyC];
+        if (!fromC || !toC) return;
+
+        const hasExplicitYesTarget = lastNode.type === 'decision' && hasNumericTarget(lastNode.yes_target);
+        if (hasExplicitYesTarget) return;
+        if (fromC.page !== toC.page) return;
+
+        const fx = fromC.x + (fromC.w / 2);
+        const fy = fromC.y + (fromC.h / 2);
+        const tx = toC.x + (toC.w / 2);
+        const ty = toC.y + (toC.h / 2);
+        const fromOffsets = shapeEdgeOffsets(lastNode.type);
+        const toOffsets = shapeEdgeOffsets(firstNextNode.type);
+        const startYEdge = fy + fromOffsets.bottom;
+        const endYEdge = ty - toOffsets.top;
+        const rowBottomY = fromC.y + fromC.h - 2.5;
+        const sourceRoleIdx = getRoleIndex(lastNode.executor_key);
+        const targetRoleIdx = getRoleIndex(firstNextNode.executor_key);
+
+        doc.setPage(fromC.page);
+        setLineStyle();
+
+        if (lastNode.type === 'decision') {
+          const exitSide = targetRoleIdx >= sourceRoleIdx ? 'right' : 'left';
+          const labelXOffset = exitSide === 'right' ? 2.8 : -2.8;
+          const lx = fx + labelXOffset;
+          const ly = startYEdge + 1.8;
+          drawBranchLabel('Y', lx, ly, 'exact');
+        }
+
+        if (lastNode.executor_key === firstNextNode.executor_key) {
+          const preShapeY = endYEdge - 2.4;
+          doc.line(fx, startYEdge, fx, preShapeY);
+          doc.line(fx, preShapeY, fx, endYEdge + ARROW_PENETRATE_MM);
+          drawArrow(fx, endYEdge + ARROW_PENETRATE_MM, 'down');
+        } else {
+          doc.line(fx, startYEdge, fx, rowBottomY);
+          if (Math.abs(tx - fx) > 0.1) {
+            doc.line(fx, rowBottomY, tx, rowBottomY);
+          }
+          const preShapeY = endYEdge - 2.4;
+          doc.line(tx, rowBottomY, tx, preShapeY);
+          doc.line(tx, preShapeY, tx, endYEdge + ARROW_PENETRATE_MM);
+          drawArrow(tx, endYEdge + ARROW_PENETRATE_MM, 'down');
+        }
+      }
+    });
+  };
+
+  const drawCrossPageFlow = () => {
+    activities.forEach((activity, rowIndex) => {
+      if (rowIndex >= activities.length - 1) return;
+
       const nodes = Array.isArray(activity.flow_nodes) ? activity.flow_nodes : [];
       const nextActivity = activities[rowIndex + 1];
       const nextNodes = Array.isArray(nextActivity.flow_nodes) ? nextActivity.flow_nodes : [];
@@ -620,58 +1250,190 @@ const drawPageTwo = () => {
       const to = cellCoordinates[toKey];
       if (!from || !to) return;
 
+      if (from.page === to.page) return;
+
+      const hasExplicitYesTarget = lastNode.type === 'decision' && hasNumericTarget(lastNode.yes_target);
+      if (hasExplicitYesTarget) return;
+
+      acquireSlot(rowIndex, lastNode.executor_key, 'bottom');
+      acquireSlot(rowIndex + 1, firstNextNode.executor_key, 'top');
+
       const fx = from.x + (from.w / 2);
       const fy = from.y + (from.h / 2);
       const tx = to.x + (to.w / 2);
       const ty = to.y + (to.h / 2);
-      const size = 6;
-      const diamondScale = 1.2;
-      const diamondVScale = diamondScale * 0.8;
-      const startYEdge = (lastNode.type === 'decision') ? fy + (size * diamondVScale) : fy + (size / 2);
-      const endYEdge = (firstNextNode.type === 'decision') ? ty - (size * diamondVScale) : ty - (size / 2);
+      const fromOffsets = shapeEdgeOffsets(lastNode.type);
+      const toOffsets = shapeEdgeOffsets(firstNextNode.type);
+      const startYEdge = fy + fromOffsets.bottom;
+      const endYEdge = ty - toOffsets.top;
+      const fromCellBottom = from.y + from.h;
+      const toCellTop = to.y;
       const sourceRoleIdx = getRoleIndex(lastNode.executor_key);
       const targetRoleIdx = getRoleIndex(firstNextNode.executor_key);
-      const rowBottomY = from.y + from.h;
-      const hasExplicitYesTarget = lastNode.type === 'decision' && hasNumericTarget(lastNode.yes_target);
 
-      if (from.page === to.page) {
-        doc.setPage(from.page);
-        if (lastNode.type === 'decision' && !hasExplicitYesTarget) {
-          drawBranchLabel('Y', fx, startYEdge + 1, 'right');
-        }
-
-        if (hasExplicitYesTarget) {
-          return;
-        } else if (lastNode.executor_key === firstNextNode.executor_key) {
-          doc.line(fx, startYEdge, fx, endYEdge);
-          drawArrow(fx, endYEdge, 'down');
-        } else if (lastNode.type === 'decision') {
-          const targetSideX = targetRoleIdx > sourceRoleIdx
-            ? tx - ((firstNextNode.type === 'decision') ? (size * diamondScale) : size)
-            : tx + ((firstNextNode.type === 'decision') ? (size * diamondScale) : size);
-          const arrowDirection = targetRoleIdx > sourceRoleIdx ? 'right' : 'left';
-          doc.line(fx, startYEdge, fx, ty);
-          doc.line(fx, ty, targetSideX, ty);
-          drawArrow(targetSideX, ty, arrowDirection);
-        } else if (firstNextNode.type === 'decision') {
-          const channelY = rowBottomY - 1 - (sourceRoleIdx * 0.5);
-          doc.line(fx, startYEdge, fx, channelY);
-          doc.line(fx, channelY, tx, channelY);
-          doc.line(tx, channelY, tx, endYEdge);
-          drawArrow(tx, endYEdge, 'down');
-        } else {
-          const sourceSideX = targetRoleIdx > sourceRoleIdx ? fx + size : fx - size;
-          doc.line(sourceSideX, fy, tx, fy);
-          doc.line(tx, fy, tx, endYEdge);
-          drawArrow(tx, endYEdge, 'down');
-        }
+      doc.setPage(from.page);
+      setLineStyle();
+      if (lastNode.type === 'decision') {
+        const sourceRoleIdx2 = getRoleIndex(lastNode.executor_key);
+        const targetRoleIdx2 = getRoleIndex(firstNextNode.executor_key);
+        const exitSide2 = targetRoleIdx2 >= sourceRoleIdx2 ? 'right' : 'left';
+        const labelXOffset2 = exitSide2 === 'right' ? 2.8 : -2.8;
+        const lx = fx + labelXOffset2;
+        const ly = startYEdge + 1.8;
+        drawBranchLabel('Y', lx, ly, 'exact');
       }
-    }
-  });
+
+      if (lastNode.executor_key === firstNextNode.executor_key) {
+        doc.line(fx, startYEdge, fx, fromCellBottom);
+        doc.setPage(to.page);
+        setLineStyle();
+        const preShapeY = endYEdge - 2.4;
+        doc.line(tx, toCellTop, tx, preShapeY);
+        doc.line(tx, preShapeY, tx, endYEdge + ARROW_PENETRATE_MM);
+        drawArrow(tx, endYEdge + ARROW_PENETRATE_MM, 'down');
+      } else {
+        const crossLaneBottom = from.y + from.h - 2.5;
+        const crossLaneTop = to.y + 2.5;
+        doc.line(fx, startYEdge, fx, crossLaneBottom);
+        if (Math.abs(tx - fx) > 0.1) {
+          doc.line(fx, crossLaneBottom, fx, fromCellBottom);
+        } else {
+          doc.line(fx, crossLaneBottom, fx, fromCellBottom);
+        }
+
+        doc.setPage(to.page);
+        setLineStyle();
+        const preShapeY = endYEdge - 2.4;
+        if (Math.abs(tx - fx) > 0.1) {
+          doc.line(tx, toCellTop, tx, crossLaneTop);
+          doc.line(tx, crossLaneTop, tx, preShapeY);
+        } else {
+          doc.line(tx, toCellTop, tx, preShapeY);
+        }
+        doc.line(tx, preShapeY, tx, endYEdge + ARROW_PENETRATE_MM);
+        drawArrow(tx, endYEdge + ARROW_PENETRATE_MM, 'down');
+      }
+    });
+
+    activities.forEach((activity, rowIndex) => {
+      const nodes = Array.isArray(activity.flow_nodes) ? activity.flow_nodes : [];
+      for (let nodeIndex = 0; nodeIndex < nodes.length; nodeIndex += 1) {
+        const currentNode = nodes[nodeIndex];
+        if (currentNode.type !== 'decision') continue;
+
+        const fromKey = `${rowIndex}-${currentNode.executor_key}`;
+        const from = cellCoordinates[fromKey];
+        if (!from) continue;
+
+        const fromOffsets = shapeEdgeOffsets(currentNode.type);
+        const fx = from.x + (from.w / 2);
+        const fy = from.y + (from.h / 2);
+        const sourceRoleIdx = getRoleIndex(currentNode.executor_key);
+
+        const branchTargets = [
+          { label: 'Y', targetIndex: Number(currentNode.yes_target || 0) - 1, targetExecutorKey: currentNode.yes_target_executor_key || '' },
+          { label: 'T', targetIndex: Number(currentNode.no_target || 0) - 1, targetExecutorKey: currentNode.no_target_executor_key || '' },
+        ];
+
+        branchTargets.forEach((branch) => {
+          if (!hasNumericTarget(branch.targetIndex + 1)) return;
+          const targetMeta = firstTargetMeta(branch.targetIndex, branch.targetExecutorKey);
+          if (!targetMeta) return;
+          const to = cellCoordinates[targetMeta.key];
+          if (!to) return;
+          if (from.page === to.page) return;
+
+          const targetExec = targetMeta.node.executor_key;
+          const targetRoleIdx = getRoleIndex(targetExec);
+          const sameRow = branch.targetIndex === rowIndex;
+          let exitSide = targetRoleIdx > sourceRoleIdx ? 'right' : (targetRoleIdx < sourceRoleIdx ? 'left' : 'bottom');
+          const track = ensureSlotTracker(rowIndex);
+          const fromCell = track[currentNode.executor_key];
+          if (fromCell && fromCell[exitSide] && fromCell[exitSide].count > 0) {
+            for (const alt of ['right', 'left', 'bottom', 'top']) {
+              if (!fromCell[alt] || fromCell[alt].count === 0) { exitSide = alt; break; }
+            }
+          }
+          acquireSlot(rowIndex, currentNode.executor_key, exitSide);
+          acquireSlot(branch.targetIndex, targetExec, 'top');
+
+          const tx = to.x + (to.w / 2);
+          const ty = to.y + (to.h / 2);
+          const targetNode = targetMeta.node;
+          const targetOffsets = shapeEdgeOffsets(targetNode.type);
+          const targetTop = ty - targetOffsets.top;
+          const fromCellBottom = from.y + from.h;
+          const toCellTop = to.y;
+
+          const isVerticalExit = exitSide === 'top' || exitSide === 'bottom';
+          const startP = pointOnSide(exitSide, 'mid', fx, fy, fromOffsets);
+          const straightStep = 2.2;
+          const dirSign = { right: 1, left: -1, top: -1, bottom: 1 };
+          let stepX = startP.x;
+          let stepY = startP.y;
+          if (!isVerticalExit) stepX += dirSign[exitSide] * straightStep;
+          else stepY += dirSign[exitSide] * straightStep;
+          // SNAKE: stepX/stepY menjauhi border cell from
+          const fCellRight = from.x + from.w;
+          const fCellLeft  = from.x;
+          const fCellBot    = from.y + from.h;
+          const fCellTop    = from.y;
+          if (!isVerticalExit && exitSide === 'right' && stepX >= (fCellRight - 0.8) && stepX <= (fCellRight + 1.2)) { stepX = fCellRight + 1.8; }
+          if (!isVerticalExit && exitSide === 'left'  && stepX <= (fCellLeft  + 0.8) && stepX >= (fCellLeft  - 1.2)) { stepX = fCellLeft  - 1.8; }
+          if (isVerticalExit  && exitSide === 'bottom'&& stepY >= (fCellBot   - 0.8) && stepY <= (fCellBot   + 1.2)) { stepY = fCellBot   + 1.8; }
+          if (isVerticalExit  && exitSide === 'top'   && stepY <= (fCellTop   + 0.8) && stepY >= (fCellTop   - 1.2)) { stepY = fCellTop   - 1.8; }
+
+          doc.setPage(from.page);
+          setLineStyle();
+          // Label posisi dekat exit shape, menjauhi border cell dan garis konektor
+          let lx = startP.x, ly = startP.y;
+          const fCRight = from.x + from.w;
+          const fCLeft  = from.x;
+          const fCBot   = from.y + from.h;
+          if (!isVerticalExit) {
+            lx = startP.x + (dirSign[exitSide] * 5.8);
+            const maxSafeX = fCRight - 1.6;
+            const minSafeX = fCLeft + 1.6;
+            if (lx > maxSafeX) lx = maxSafeX;
+            if (lx < minSafeX) lx = minSafeX;
+            ly = startP.y + 3.5;
+          } else {
+            lx = startP.x + 2.5;
+            ly = startP.y + 1.8;
+            const maxSafeY = fCBot - 2.0;
+            if (ly > maxSafeY) ly = maxSafeY;
+          }
+          drawBranchLabel(branch.label, lx, ly, 'exact');
+
+          doc.line(startP.x, startP.y, stepX, stepY);
+          const laneY = Math.min(stepY, fromCellBottom - 2);
+          doc.line(stepX, stepY, stepX, laneY);
+          const crossTargetX = exitSide === 'left' || (exitSide !== 'right' && targetRoleIdx < sourceRoleIdx)
+            ? Math.min(stepX, tx + 5)
+            : Math.max(stepX, tx - 5);
+          if (Math.abs(stepX - crossTargetX) > 0.1) {
+            doc.line(stepX, laneY, crossTargetX, laneY);
+          }
+          doc.line(crossTargetX, laneY, crossTargetX, fromCellBottom);
+
+          doc.setPage(to.page);
+          setLineStyle();
+          const enterX = Math.abs(tx - crossTargetX) < 0.1 ? tx : tx;
+          const preShapeY = targetTop - 3.2;
+          doc.line(enterX, toCellTop, enterX, preShapeY);
+          doc.line(enterX, preShapeY, enterX, targetTop + ARROW_PENETRATE_MM);
+          drawArrow(enterX, targetTop + ARROW_PENETRATE_MM, 'down');
+        });
+      }
+    });
+  };
+
+  drawSamePageFlow();
+  drawCrossPageFlow();
 };
 
 drawPageOne();
-drawPageTwo();
+drawActivityTableAndFlows();
 
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 fs.writeFileSync(outputPath, Buffer.from(doc.output('arraybuffer')));
