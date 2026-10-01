@@ -741,7 +741,7 @@ const drawActivityTableAndFlows = (overrideStartY = null) => {
       if (!isVExit) {
         lx = exitP.x + (dirSign[exitSide] * 6.4);
         const maxSafeX = fromCellRight + 3.6;
-        const minSafeX = fromCellLeft - 2.2;
+        const minSafeX = fromCellLeft - 3.2;
         if (lx > maxSafeX) lx = maxSafeX;
         if (lx < minSafeX) lx = minSafeX;
         ly = exitP.y + 3.5;
@@ -1457,7 +1457,7 @@ const drawActivityTableAndFlows = (overrideStartY = null) => {
           if (!isVerticalExit) {
             lx = startP.x + (dirSign[exitSide] * 6.4);
             const maxSafeX = fCRight + 3.6;
-            const minSafeX = fCLeft - 2.2;
+            const minSafeX = fCLeft - 3.2;
             if (lx > maxSafeX) lx = maxSafeX;
             if (lx < minSafeX) lx = minSafeX;
             ly = startP.y + 3.5;
