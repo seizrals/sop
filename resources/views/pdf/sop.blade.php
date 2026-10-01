@@ -1138,10 +1138,26 @@
                     if (! $isLastRow) {
                         $needSideEntryDefault = false;
                         $defaultEntrySide = 'top';
-                        if ($nextRowFirstCol !== null && $nextRowFirstCol !== $lastCol) {
-                            $hasDecThisRow = count($decisionColsThisRow) > 0;
+                        $nextRowFirstType = 'process';
+                        if ($nextRowFirstKey !== null && isset($activities[$rowIndex + 1])) {
+                            $nextNodes = collect(data_get($activities[$rowIndex + 1], 'flow_nodes', []))->values();
+                            foreach ($nextNodes as $nn) {
+                                if ((string) data_get($nn, 'executor_key') === $nextRowFirstKey) {
+                                    $nextRowFirstType = (string) data_get($nn, 'type', 'process');
+                                    break;
+                                }
+                            }
+                        }
+                        if ($nextRowFirstCol !== null && $nextRowFirstCol !== $lastCol && $nextRowFirstType !== 'decision') {
+                            $decBtwDef = 0;
+                            $lo = min($lastCol, $nextRowFirstCol);
+                            $hi = max($lastCol, $nextRowFirstCol);
+                            foreach ($decisionColsThisRow as $dc) {
+                                $d = (int) $dc;
+                                if ($d > $lo && $d < $hi) $decBtwDef++;
+                            }
                             $distDefault = abs($nextRowFirstCol - $lastCol);
-                            if ($distDefault > 1 || $hasDecThisRow) {
+                            if ($distDefault > 1 || $decBtwDef > 0) {
                                 $needSideEntryDefault = true;
                                 $defaultEntrySide = ($nextRowFirstCol < $lastCol) ? 'right' : 'left';
                             }
@@ -1386,18 +1402,29 @@
                             if ($yesToNextActivity) { $yEntry = 'top'; }
                             if ($tToNextActivity) { $tEntry = 'top'; }
 
-                            $pickEntrySide = function (int $fc, int $tc, bool $toNext, bool $rowHasDec): string {
+                            $decBetween = function (array $decCols, int $fc, int $tc): int {
+                                $lo = min($fc, $tc);
+                                $hi = max($fc, $tc);
+                                $cnt = 0;
+                                foreach ($decCols as $dc) {
+                                    $d = (int) $dc;
+                                    if ($d > $lo && $d < $hi) $cnt++;
+                                }
+                                return $cnt;
+                            };
+                            $pickEntrySide = function (int $fc, int $tc, bool $toNext, int $decBtw, string $toType): string {
+                                if ($toType === 'decision') return 'top';
                                 if (! $toNext) return 'top';
                                 if ($fc === $tc) return 'top';
                                 $dist = abs($fc - $tc);
-                                if ($dist <= 1 && ! $rowHasDec) return 'top';
+                                if ($dist <= 1 && $decBtw === 0) return 'top';
                                 return ($tc < $fc) ? 'right' : 'left';
                             };
-                            $hasDecThisRow = count($decisionColsThisRow) > 0;
 
                             $ySameRow = ($yesIdx === $rowIndex);
                             if (! $ySameRow) {
-                                $ySide = $pickEntrySide($fromCol, $toCol, $yesToNextActivity, $hasDecThisRow);
+                                $yDecBtw = $decBetween($decisionColsThisRow, $fromCol, $toCol);
+                                $ySide = $pickEntrySide($fromCol, $toCol, $yesToNextActivity, $yDecBtw, (string) $toType);
                                 $drawExplicitSource($fromCol, $toCol, $yExit, 'mid', $fromEdge, $yesIdx, 'Y', $ySide);
                             } else {
                                 $drawElbow($fromCol, $toCol, $yExit, $yEntry, 'mid', 'mid', $fromEdge, $toEdge, 'Y');
@@ -1422,7 +1449,8 @@
                                 if ($noCol !== null && $noNode !== null && ! isset($drawnBranches[$i.'-T'])) {
                                     $noEdge = $edge($noNode['type']);
                                     if (! $tSameRow) {
-                                        $tSide = $pickEntrySide($fromCol, $noCol, $tToNextActivity, $hasDecThisRow);
+                                        $tDecBtw = $decBetween($decisionColsThisRow, $fromCol, $noCol);
+                                        $tSide = $pickEntrySide($fromCol, $noCol, $tToNextActivity, $tDecBtw, (string) ($noNode['type'] ?? 'process'));
                                         $drawExplicitSource($fromCol, $noCol, $tExit, 'mid', $fromEdge, $noActivityIdx, 'T', $tSide);
                                     } else {
                                         if ($tBackToPartnerProcess || ! in_array($noCol, $processColsThisRow, true)) {
@@ -1435,7 +1463,8 @@
                                     $drawnBranches[$i.'-T'] = true;
                                 } elseif (! $noInSameActivity && $tToPriorActivity && ! isset($drawnBranches[$i.'-T'])) {
                                     if ($tIdx !== null) {
-                                        $tSide2 = $pickEntrySide($fromCol, $fromCol, false, $hasDecThisRow);
+                                        $tDecBtw2 = $decBetween($decisionColsThisRow, $fromCol, $fromCol);
+                                        $tSide2 = $pickEntrySide($fromCol, $fromCol, false, $tDecBtw2, 'process');
                                         $drawExplicitSource($fromCol, $fromCol, $tExit, 'mid', $fromEdge, $tIdx, 'T', $tSide2);
                                     }
                                     $drawnBranches[$i.'-T'] = true;
@@ -1446,12 +1475,22 @@
                             $yesIdx2 = (int) $from['yes_target'] - 1;
                             $yToNext2 = ($yesIdx2 > $rowIndex);
                             $ySameRow2 = ($yesIdx2 === $rowIndex);
-                            $hasDecThisRow2 = count($decisionColsThisRow) > 0;
-                            $pickEntrySide2 = function (int $fc, int $tc, bool $toNext, bool $rowHasDec): string {
+                            $decBetween2 = function (array $decCols, int $fc, int $tc): int {
+                                $lo = min($fc, $tc);
+                                $hi = max($fc, $tc);
+                                $cnt = 0;
+                                foreach ($decCols as $dc) {
+                                    $d = (int) $dc;
+                                    if ($d > $lo && $d < $hi) $cnt++;
+                                }
+                                return $cnt;
+                            };
+                            $pickEntrySide2 = function (int $fc, int $tc, bool $toNext, int $decBtw, string $toType): string {
+                                if ($toType === 'decision') return 'top';
                                 if (! $toNext) return 'top';
                                 if ($fc === $tc) return 'top';
                                 $dist = abs($fc - $tc);
-                                if ($dist <= 1 && ! $rowHasDec) return 'top';
+                                if ($dist <= 1 && $decBtw === 0) return 'top';
                                 return ($tc < $fc) ? 'right' : 'left';
                             };
                             $toRule = function ($toType2, $fromCol2, $toCol2, $fromType2, $yToNext, $tIdx = null, $rowIdx = null) {
@@ -1474,7 +1513,8 @@
                             };
                             [$yExit, $yEntry] = $toRule($toType, $fromCol, $toCol, $fromType, $yToNext2);
                             if (! $ySameRow2) {
-                                $ySide2 = $pickEntrySide2($fromCol, $toCol, ($yesIdx2 > $rowIndex), $hasDecThisRow2);
+                                $yDecBtw2 = $decBetween2($decisionColsThisRow, $fromCol, $toCol);
+                                $ySide2 = $pickEntrySide2($fromCol, $toCol, ($yesIdx2 > $rowIndex), $yDecBtw2, (string) $toType);
                                 $drawExplicitSource($fromCol, $toCol, $yExit, 'mid', $fromEdge, $yesIdx2, 'Y', $ySide2);
                             } else {
                                 if (in_array($toCol, $processColsThisRow, true) && $toType !== 'decision') {
@@ -1511,7 +1551,8 @@
                                         }
                                     }
                                     if ($noActivityIdx !== $rowIndex) {
-                                        $tSide2 = $pickEntrySide2($fromCol, $noCol, ($noActivityIdx > $rowIndex), $hasDecThisRow2);
+                                        $tDecBtw2 = $decBetween2($decisionColsThisRow, $fromCol, $noCol);
+                                        $tSide2 = $pickEntrySide2($fromCol, $noCol, ($noActivityIdx > $rowIndex), $tDecBtw2, $noType);
                                         $drawExplicitSource($fromCol, $noCol, $tExit, 'mid', $fromEdge, $noActivityIdx, 'T', $tSide2);
                                     } else {
                                         if (in_array($noCol, $processColsThisRow, true) && $noType !== 'decision') {
