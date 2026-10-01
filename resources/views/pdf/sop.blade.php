@@ -831,11 +831,11 @@
                         if ($exitSide === 'right') {
                             $lx = $exitP['x'] + 20.0;
                             if ($lx > 85) $lx = 85;
-                            $labelY = $exitP['y'] + 6.5;
+                            $labelY = $exitP['y'] + 7.5;
                         } elseif ($exitSide === 'left') {
                             $lx = $exitP['x'] - 20.0;
                             if ($lx < 15) $lx = 15;
-                            $labelY = $exitP['y'] + 6.5;
+                            $labelY = $exitP['y'] + 7.5;
                         } elseif ($exitSide === 'bottom') {
                             $lx = $exitP['x'] + 9.0;
                             $labelY = $exitP['y'] + 5.0;
@@ -1051,11 +1051,11 @@
                         if ($exitSide === 'right') {
                             $lx = $exitP['x'] + 20.0;
                             if ($lx > 85) $lx = 85;
-                            $labelY = $exitP['y'] + 6.5;
+                            $labelY = $exitP['y'] + 7.5;
                         } elseif ($exitSide === 'left') {
                             $lx = $exitP['x'] - 20.0;
                             if ($lx < 15) $lx = 15;
-                            $labelY = $exitP['y'] + 6.5;
+                            $labelY = $exitP['y'] + 7.5;
                         } elseif ($exitSide === 'bottom') {
                             $lx = $exitP['x'] + 9.0;
                             $labelY = $exitP['y'] + 5.0;
