@@ -23,6 +23,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('/team/{team}/activity/{activity}', [SopController::class, 'updateActivity'])->name('activity.update');
         Route::delete('/team/{team}/activity/{activity}', [SopController::class, 'destroyActivity'])->name('activity.destroy');
         Route::post('/team/{team}/executor', [SopController::class, 'storeMasterExecutor'])->name('executor.store');
+        Route::delete('/team/{team}/executor/{executor:slug}', [SopController::class, 'destroyMasterExecutor'])->name('executor.destroy');
         Route::get('/team/{team}/activity/{activity}', [SopController::class, 'activity'])->name('activity');
         Route::get('/team/{team}/activity/{activity}/create', [SopController::class, 'create'])->name('create');
         Route::post('/team/{team}/activity/{activity}', [SopController::class, 'store'])->name('store');

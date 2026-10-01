@@ -296,33 +296,88 @@
                         <h3 class="mt-2 text-xl font-bold text-slate-900">Uraian Kegiatan</h3>
                         <p class="mt-2 text-sm leading-6 text-slate-500">Susun langkah kegiatan SOP, pilih pelaksana dari daftar yang tersedia, lalu cek hasilnya langsung pada preview di samping.</p>
                     </div>
-                    <div class="mt-6 rounded-[28px] border border-amber-200 bg-[linear-gradient(180deg,#fffaf0_0%,#fffbeb_100%)] p-5 shadow-[0_20px_45px_-30px_rgba(217,119,6,0.45)]">
-                        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                            <div class="min-w-0 flex-1">
-                                <div class="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                                    <p class="text-xs font-semibold uppercase tracking-[0.25em] text-amber-700">Master Pelaksana SOP</p>
-                                    <p class="mt-2 leading-6">Gunakan daftar pelaksana yang sudah tersimpan. Tambahkan pelaksana baru hanya jika nama yang dibutuhkan belum ada di daftar ini.</p>
-                                    <p class="mt-1 leading-6">Pelaksana yang disimpan di sini akan masuk ke database dan bisa dipakai lagi pada SOP berikutnya.</p>
+                <section class="mt-6 rounded-[32px] border border-slate-200/70 bg-white p-6 shadow-[0_18px_50px_-35px_rgba(15,23,42,0.25)]">
+                    <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                        <div class="min-w-0 flex-1">
+                            <div class="flex flex-wrap items-center gap-3">
+                                <div class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-[0_10px_25px_-10px_rgba(37,99,235,0.7)]">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                                 </div>
-                                <div class="mt-4 rounded-2xl border border-amber-200/80 bg-white/80 p-3">
-                                    <div class="flex items-center gap-2 overflow-hidden" id="master-executor-chips"></div>
+                                <div>
+                                    <p class="text-xs font-semibold uppercase tracking-[0.28em] text-blue-700">Master Pelaksana SOP</p>
+                                    <h3 class="mt-1 text-lg font-bold text-slate-900">Daftar Peran / Jabatan Pelaksana</h3>
+                                    <p class="mt-4 max-w-2xl text-sm leading-6 text-slate-500">
+                                        Ikuti langkah berikut ini agar tidak ada duplikasi pelaksana.
+                                    </p>
                                 </div>
-                                <div id="master-executor-feedback" class="mt-3 hidden rounded-2xl px-4 py-3 text-sm font-medium"></div>
-                                <div class="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
-                                    <div class="relative">
-                                        <input
-                                            id="master-executor-input"
-                                            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
-                                            autocomplete="off"
-                                            placeholder="Cari pelaksana tersimpan atau ketik nama baru jika belum ada"
-                                        >
-                                        <div id="master-executor-menu" class="absolute z-20 mt-2 hidden max-h-56 w-full overflow-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-xl"></div>
-                                    </div>
-                                    <button type="button" class="inline-flex h-[50px] items-center justify-center rounded-2xl border border-amber-300 bg-white px-4 py-3 text-sm font-semibold text-amber-800 transition hover:bg-amber-50" id="add-master-executor-button">Simpan Pelaksana</button>
+                                {{-- <span id="master-executor-count-badge" class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">0 pelaksana</span> --}}
+                            </div>
+                            <div class="mt-4 grid gap-3 text-[11px] font-semibold sm:grid-cols-3">
+                                <div class="flex items-center gap-2 rounded-2xl border border-blue-200/60 bg-blue-50/60 px-3 py-2 text-blue-800">
+                                    <span class="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-white">1</span>
+                                    <span>Cari dulu nama pelaksana di kolom bawah</span>
+                                </div>
+                                <div class="flex items-center gap-2 rounded-2xl border border-amber-200/60 bg-amber-50/60 px-3 py-2 text-amber-800">
+                                    <span class="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-white">2</span>
+                                    <span>Klik hasil pencarian untuk memakai</span>
+                                </div>
+                                <div class="flex items-center gap-2 rounded-2xl border border-emerald-200/60 bg-emerald-50/60 px-3 py-2 text-emerald-800">
+                                    <span class="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-white">3</span>
+                                    <span>Jika belum ada → Simpan Pelaksana</span>
                                 </div>
                             </div>
                         </div>
+                        <div class="w-full shrink-0 rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white px-5 py-4 lg:w-[300px]">
+                            <div class="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                                <span>Status</span>
+                                <span class="text-emerald-600">● Aktif</span>
+                            </div>
+                            <button type="button" id="master-executor-open-modal-direct" class="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M9 9h6v6H9z"/></svg>
+                                Lihat Semua Pelaksana
+                            </button>
+                        </div>
                     </div>
+
+                    <div class="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
+                        <div class="rounded-3xl border border-slate-200/70 bg-white p-5 shadow-[0_10px_35px_-30px_rgba(15,23,42,0.25)]">
+                            <div class="flex items-center justify-between">
+                                <label class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500" for="master-executor-input">Tambah / Cari Pelaksana</label>
+                            </div>
+                            <div class="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+                                <div class="relative">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                                    <input
+                                        id="master-executor-input"
+                                        class="w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                                        autocomplete="off"
+                                        placeholder="Cari pelaksana: Ketua Tim, PCS, PMS, dll."
+                                    >
+                                    <div id="master-executor-menu" class="absolute z-20 mt-2 hidden max-h-64 w-full overflow-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_25px_60px_-20px_rgba(15,23,42,0.35)]"></div>
+                                </div>
+                                <button type="button" id="add-master-executor-button" class="inline-flex h-[50px] items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 px-5 py-3 text-sm font-bold text-white shadow-[0_15px_30px_-12px_rgba(37,99,235,0.7)] transition hover:from-blue-700 hover:to-indigo-700 active:scale-[0.98]">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                                    Simpan Pelaksana
+                                </button>
+                            </div>
+                            <div id="master-executor-feedback" class="mt-4 hidden rounded-2xl px-4 py-3 text-sm font-medium"></div>
+                        </div>
+
+                        <div class="rounded-3xl border border-slate-200/70 bg-gradient-to-br from-blue-50/60 via-white to-white p-5 shadow-[0_10px_35px_-30px_rgba(37,99,235,0.25)]">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">Tersimpan</p>
+                                    <p class="mt-1 text-[13px] text-slate-500">Daftar pelaksana yang sudah tersimpan</p>
+                                </div>
+                                <div id="master-executor-pill-total" class="inline-flex h-9 w-auto items-center gap-1 rounded-full border border-blue-200 bg-white px-3 text-xs font-bold text-blue-700 shadow-sm">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+                                    <span id="master-executor-total-text">0</span>
+                                </div>
+                            </div>
+                            <div class="mt-4 rounded-2xl border border-blue-200/70 bg-white/90 p-3" id="master-executor-chips"></div>
+                        </div>
+                    </div>
+                </section>
                     <div id="activity-rows" class="mt-6 space-y-5"></div>
                     <div class="mt-6 flex justify-center">
                         <button type="button" class="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800" id="add-activity-row">Tambah Kegiatan</button>
@@ -375,15 +430,53 @@
 
     <div id="master-executor-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/45 px-4 py-6">
         <div class="w-full max-w-3xl overflow-hidden rounded-[32px] border border-white/70 bg-white shadow-[0_30px_80px_-35px_rgba(15,23,42,0.35)]">
-            <div class="flex items-center justify-between border-b border-slate-200 px-6 py-5">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.25em] text-blue-700">Master Pelaksana SOP</p>
-                    <h3 class="mt-2 text-xl font-bold text-slate-900">Daftar Pelaksana Tersimpan</h3>
+            <div class="flex items-start gap-4 border-b border-slate-200 px-6 pt-6">
+                <div class="mt-1 shrink-0 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-[0_10px_25px_-10px_rgba(37,99,235,0.7)]">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 </div>
-                <button type="button" id="close-master-executor-modal" class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-700">✕</button>
+                <div class="min-w-0 flex-1 pb-5">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-[0.25em] text-blue-700">Master Pelaksana SOP</p>
+                            <h3 class="mt-1 text-xl font-bold text-slate-900">Daftar Pelaksana Tersimpan</h3>
+                        </div>
+                        <span id="master-executor-modal-counter" class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">0 data</span>
+                    </div>
+                </div>
+                <button type="button" id="close-master-executor-modal" class="mt-2 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-700">✕</button>
             </div>
             <div class="max-h-[70vh] overflow-auto px-6 py-6">
+                <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <label for="master-executor-search" class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Cari Pelaksana</label>
+                    <div class="relative sm:max-w-sm sm:flex-1">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                        <input id="master-executor-search" type="search" placeholder="Ketik nama pelaksana untuk memfilter..." class="w-full rounded-2xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100" />
+                    </div>
+                </div>
                 <div id="master-executor-modal-list" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="master-warning-modal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-slate-950/45 px-4 py-6">
+        <div class="w-full max-w-xl overflow-hidden rounded-[32px] border border-white/70 bg-white shadow-[0_30px_80px_-35px_rgba(15,23,42,0.4)]">
+            <div class="flex items-start gap-4 px-6 pt-7">
+                <div class="mt-6 shrink-0 inline-flex h-14 w-14 items-center justify-center rounded-full bg-red-50">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-7 w-7 text-red-600"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                </div>
+                <div class="min-w-0 flex-1 py-5">
+                    <p id="master-warning-subtitle" class="text-xs font-semibold uppercase tracking-[0.25em] text-red-600">Peringatan</p>
+                    <h3 id="master-warning-title" class="mt-2 text-xl font-bold text-slate-900">Tindakan tidak dapat dilanjutkan</h3>
+                    <p id="master-warning-message" class="mt-3 text-sm leading-6 text-slate-600">Pesan peringatan akan ditampilkan di sini.</p>
+                    <ul id="master-warning-usages" class="mt-4 hidden flex flex-wrap gap-2"></ul>
+                </div>
+                <button type="button" id="close-master-warning-modal" class="mt-5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-700">✕</button>
+            </div>
+            <div class="flex justify-end gap-3 border-t border-slate-100 px-6 py-5">
+                <button type="button" id="master-warning-ok" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><polyline points="20 6 9 17 4 12"/></svg>
+                    Mengerti
+                </button>
             </div>
         </div>
     </div>
@@ -421,6 +514,45 @@
             const masterExecutorModal = document.getElementById('master-executor-modal');
             const masterExecutorModalList = document.getElementById('master-executor-modal-list');
             const closeMasterExecutorModal = document.getElementById('close-master-executor-modal');
+            const masterExecutorSearch = document.getElementById('master-executor-search');
+            let masterExecutorSearchTerm = '';
+            const masterWarningModal = document.getElementById('master-warning-modal');
+            const masterWarningTitle = document.getElementById('master-warning-title');
+            const masterWarningSubtitle = document.getElementById('master-warning-subtitle');
+            const masterWarningMessage = document.getElementById('master-warning-message');
+            const masterWarningUsages = document.getElementById('master-warning-usages');
+            const masterWarningOk = document.getElementById('master-warning-ok');
+            const closeMasterWarningModal = document.getElementById('close-master-warning-modal');
+            const closeWarningModal = () => {
+                masterWarningModal?.classList.add('hidden');
+                masterWarningModal?.classList.remove('flex');
+            };
+            const showMasterWarning = ({ title, subtitle, message, tone = 'error', usages = [] }) => {
+                if (!masterWarningModal) return;
+                if (masterWarningTitle) masterWarningTitle.textContent = title || 'Peringatan';
+                if (masterWarningSubtitle) {
+                    masterWarningSubtitle.textContent = subtitle || (tone === 'success' ? 'Berhasil' : 'Peringatan');
+                    masterWarningSubtitle.className = `text-xs font-semibold uppercase tracking-[0.25em] ${tone === 'success' ? 'text-emerald-600' : tone === 'warning' ? 'text-amber-600' : 'text-red-600'}`;
+                }
+                if (masterWarningMessage) masterWarningMessage.textContent = message || '';
+                if (masterWarningUsages) {
+                    if (Array.isArray(usages) && usages.length > 0) {
+                        masterWarningUsages.classList.remove('hidden');
+                        masterWarningUsages.innerHTML = usages.slice(0, 8).map((usage) => {
+                            let badgeTone = 'border-slate-200 bg-slate-50 text-slate-700';
+                            if (String(usage).startsWith('[SOP]')) badgeTone = 'border-indigo-200 bg-indigo-50 text-indigo-800';
+                            if (String(usage).startsWith('[Template]')) badgeTone = 'border-violet-200 bg-violet-50 text-violet-800';
+                            if (String(usage).startsWith('[Kegiatan]')) badgeTone = 'border-amber-200 bg-amber-50 text-amber-900';
+                            return `<li class="inline-flex items-center gap-2 rounded-full border ${badgeTone} px-3 py-1.5 text-xs font-semibold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3 w-3 opacity-70"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>${escapeHtml(String(usage).slice(0, 90) + (String(usage).length > 90 ? '…' : ''))}</li>`;
+                        }).join('') + (usages.length > 8 ? `<li class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600">+${usages.length - 8} lainnya</li>` : '');
+                    } else {
+                        masterWarningUsages.classList.add('hidden');
+                        masterWarningUsages.innerHTML = '';
+                    }
+                }
+                masterWarningModal.classList.remove('hidden');
+                masterWarningModal.classList.add('flex');
+            };
             const templateLoader = document.getElementById('template-loader');
             const replaceButton = document.getElementById('replace-button');
             const replaceSearch = document.getElementById('replace-search');
@@ -429,6 +561,7 @@
             const previewDownloadLabel = document.getElementById('preview-download-label');
             const templates = @json($templatesForJs);
             const storeExecutorUrl = @json(route('sop.executor.store', $team));
+            const destroyExecutorUrlTemplate = @json(route('sop.executor.destroy', [$team, '__SLUG__']));
             const previewDownloadUrl = @json(route('sop.preview-download', [$team, $activity]));
             const csrfToken = @json(csrf_token());
             const listFieldNames = ['legal_basis_text', 'executor_qualifications_text', 'related_documents_text', 'equipment_text', 'warnings_text', 'recording_text'];
@@ -661,10 +794,28 @@
                     : '<div class="rounded-xl px-3 py-2 text-sm text-slate-400">Tidak ada pelaksana yang cocok.</div>';
             };
 
+            const openMasterExecutorModalDirect = () => {
+                masterExecutorModal?.classList.remove('hidden');
+                masterExecutorModal?.classList.add('flex');
+                if (masterExecutorSearch) {
+                    masterExecutorSearch.value = masterExecutorSearchTerm;
+                    masterExecutorSearch.focus();
+                }
+            };
+
             const renderMasterExecutorPanel = () => {
                 if (!masterExecutorChips) {
                     return;
                 }
+
+                const total = executors.length;
+
+                const countBadge = document.getElementById('master-executor-count-badge');
+                if (countBadge) countBadge.textContent = `${total} pelaksana`;
+                const totalText = document.getElementById('master-executor-total-text');
+                if (totalText) totalText.textContent = String(total);
+                const modalCounter = document.getElementById('master-executor-modal-counter');
+                if (modalCounter) modalCounter.textContent = `${total} data`;
 
                 masterExecutorChips.innerHTML = executors.length
                     ? `
@@ -676,22 +827,35 @@
                     : '<span class="text-sm text-slate-500">Belum ada pelaksana tersimpan.</span>';
 
                 if (masterExecutorModalList) {
-                    masterExecutorModalList.innerHTML = executors.length
-                        ? executors.map((executor) => `
-                            <div class="group relative truncate rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 pr-10 text-sm font-semibold text-blue-700" title="${escapeHtml(executor.label)}">
-                                <span class="block truncate">${escapeHtml(executor.label)}</span>
-                                <button type="button" data-master-delete-executor="${escapeAttr(executor.key)}" class="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded-full border border-transparent text-red-500 opacity-0 transition group-hover:opacity-100 hover:border-red-200 hover:bg-red-50 hover:text-red-700 focus:opacity-100" title="Hapus pelaksana ini dari master">
+                    const needle = String(masterExecutorSearchTerm || '').trim().toLowerCase();
+                    const filtered = needle === ''
+                        ? executors
+                        : executors.filter((e) => String(e.label || '').toLowerCase().includes(needle) || String(e.key || '').toLowerCase().includes(needle));
+
+                    if (!filtered.length) {
+                        masterExecutorModalList.innerHTML = `
+                            <div class="col-span-full flex flex-col items-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="h-8 w-8 text-slate-400"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                                <div>
+                                    <p class="text-sm font-semibold text-slate-700">Tidak ditemukan pelaksana yang cocok.</p>
+                                    <p class="mt-1 text-xs text-slate-500">Coba kata kunci lain atau simpan pelaksana baru melalui input di editor.</p>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        masterExecutorModalList.innerHTML = filtered.map((executor) => `
+                            <div class="group flex items-center gap-2 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3">
+                                <span class="min-w-0 flex-1 truncate text-sm font-semibold text-blue-700" title="${escapeHtml(executor.label)}">${escapeHtml(executor.label)}</span>
+                                <button type="button" data-master-delete-executor="${escapeAttr(executor.key)}" class="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-full border border-transparent text-red-500 opacity-100 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100" title="Hapus pelaksana ini dari master">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                                 </button>
                             </div>
-                        `).join('')
-                        : '<div class="text-sm text-slate-500">Belum ada pelaksana tersimpan.</div>';
+                        `).join('');
+                    }
                 }
 
-                document.getElementById('open-master-executor-modal')?.addEventListener('click', () => {
-                    masterExecutorModal?.classList.remove('hidden');
-                    masterExecutorModal?.classList.add('flex');
-                });
+                document.getElementById('open-master-executor-modal')?.addEventListener('click', openMasterExecutorModalDirect);
+                document.getElementById('master-executor-open-modal-direct')?.addEventListener('click', openMasterExecutorModalDirect);
             };
 
             const escapeAttr = (value) => String(value ?? '')
@@ -735,7 +899,23 @@
                 masterExecutorModal?.classList.remove('flex');
             });
 
-            masterExecutorModalList?.addEventListener('click', (event) => {
+            closeMasterWarningModal?.addEventListener('click', closeWarningModal);
+            masterWarningOk?.addEventListener('click', closeWarningModal);
+            masterWarningModal?.addEventListener('click', (event) => {
+                if (event.target === masterWarningModal) closeWarningModal();
+            });
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && masterWarningModal && !masterWarningModal.classList.contains('hidden')) {
+                    closeWarningModal();
+                }
+            });
+
+            masterExecutorSearch?.addEventListener('input', (event) => {
+                masterExecutorSearchTerm = String(event.target?.value || '');
+                renderMasterExecutorPanel();
+            });
+
+            masterExecutorModalList?.addEventListener('click', async (event) => {
                 const deleteBtn = event.target.closest('[data-master-delete-executor]');
                 if (!deleteBtn) return;
                 const targetKey = String(deleteBtn.dataset.masterDeleteExecutor || '').trim();
@@ -758,20 +938,70 @@
 
                 const targetLabel = executors.find((e) => String(e.key) === targetKey)?.label || targetKey;
                 if (inUseNodes.length > 0) {
-                    setMasterExecutorFeedback(
-                        `Pelaksana "${targetLabel}" tidak dapat dihapus karena masih digunakan pada: ${inUseNodes.map((n) => n.label).slice(0, 3).join(', ')}${inUseNodes.length > 3 ? `, dan ${inUseNodes.length - 3} lainnya` : ''}.`,
-                        'error'
-                    );
+                    const usageMsg = `Pelaksana "${targetLabel}" tidak dapat dihapus karena masih digunakan pada kegiatan SOP yang sedang Anda buka. Hapus terlebih dahulu pemakaiannya pada kegiatan di bawah.`;
+                    const usageList = inUseNodes.map((u) => `[Kegiatan] ${u.label}`);
+                    setMasterExecutorFeedback(usageMsg, 'error');
+                    showMasterWarning({
+                        title: 'Pelaksana Tidak Dapat Dihapus',
+                        subtitle: 'Masih Digunakan',
+                        tone: 'error',
+                        message: usageMsg,
+                        usages: usageList,
+                    });
                     return;
                 }
 
-                if (!confirm(`Hapus pelaksana "${targetLabel}" dari master? Tindakan ini hanya menghapus dari daftar master (tidak mengubah kegiatan).`)) {
-                    return;
-                }
+                if (deleteBtn.dataset.pending === '1') return;
+                deleteBtn.dataset.pending = '1';
 
-                executors = executors.filter((e) => String(e.key) !== targetKey);
-                setMasterExecutorFeedback(`Pelaksana "${targetLabel}" dihapus dari master.`, 'success');
-                renderAll();
+                const confirmMsg = `Anda yakin menghapus pelaksana "${targetLabel}" dari daftar master? Sistem juga akan memeriksa apakah pelaksana ini digunakan di SOP lain sebelum menghapus.`;
+
+                const executeDelete = async () => {
+                    try {
+                        const url = destroyExecutorUrlTemplate.replace('__SLUG__', encodeURIComponent(targetKey));
+                        const response = await fetch(url, {
+                            method: 'DELETE',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken,
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                        });
+
+                        const result = await response.json().catch(() => ({ message: response.ok ? 'Berhasil dihapus.' : 'Gagal menghapus pelaksana.' }));
+
+                        if (!response.ok) {
+                            const err = new Error(result.message || 'Gagal menghapus pelaksana dari master.');
+                            err.usages = Array.isArray(result.usages) ? result.usages : [];
+                            throw err;
+                        }
+
+                        executors = executors.filter((e) => String(e.key) !== targetKey);
+                        setMasterExecutorFeedback(result.message || `Pelaksana "${targetLabel}" dihapus dari master.`, 'success');
+                        renderAll();
+                    } catch (error) {
+                        const msg = error.message || 'Gagal menghapus pelaksana dari master.';
+                        const usages = (typeof error === 'object' && error?.usages) || [];
+                        setMasterExecutorFeedback(msg, 'error');
+                        showMasterWarning({
+                            title: 'Pelaksana Tidak Dapat Dihapus',
+                            subtitle: 'Gagal Hapus',
+                            tone: 'error',
+                            message: msg,
+                            usages: usages,
+                        });
+                    } finally {
+                        deleteBtn?.removeAttribute('data-pending');
+                    }
+                };
+
+                window.dispatchEvent(new CustomEvent('confirm-delete', {
+                    detail: {
+                        title: 'Hapus Pelaksana dari Master',
+                        message: confirmMsg,
+                        form: { submit: () => { executeDelete(); } }
+                    }
+                }));
             });
 
             masterExecutorModal?.addEventListener('click', (event) => {
@@ -1327,7 +1557,15 @@
                 const label = String(masterExecutorInput?.value || '').trim();
 
                 if (!label) {
-                    setMasterExecutorFeedback('Isi nama pelaksana terlebih dahulu.', 'error');
+                    const emptyMsg = 'Isi nama pelaksana terlebih dahulu.';
+                    setMasterExecutorFeedback(emptyMsg, 'error');
+                    showMasterWarning({
+                        title: 'Nama Pelaksana Belum Diisi',
+                        subtitle: 'Data Kurang Lengkap',
+                        tone: 'warning',
+                        message: emptyMsg,
+                        usages: [],
+                    });
                     return;
                 }
 
@@ -1335,11 +1573,19 @@
                 const existing = executors.find((item) => item.label.toLowerCase() === label.toLowerCase() || item.key === key);
 
                 if (existing) {
-                    setMasterExecutorFeedback('Pelaksana ini sudah ada di daftar tersimpan.', 'info');
+                    const dupMsg = `Pelaksana "${existing.label}" sudah ada di daftar master. Anda bisa langsung memakainya tanpa menyimpan ulang.`;
+                    setMasterExecutorFeedback(dupMsg, 'warning');
                     if (masterExecutorInput) {
                         masterExecutorInput.value = existing.label;
                     }
                     masterExecutorMenu?.classList.add('hidden');
+                    showMasterWarning({
+                        title: 'Nama Pelaksana Sudah Ada',
+                        subtitle: 'Duplikat',
+                        tone: 'warning',
+                        message: dupMsg,
+                        usages: [],
+                    });
                     renderAll();
                     return;
                 }
@@ -1362,7 +1608,10 @@
                     const result = await response.json();
 
                     if (!response.ok) {
-                        throw new Error(result.message || 'Gagal menyimpan pelaksana.');
+                        const beUsages = Array.isArray(result.usages) ? result.usages : [];
+                        const err = new Error(result.message || 'Gagal menyimpan pelaksana.');
+                        err.usages = beUsages;
+                        throw err;
                     }
 
                     executors.push(result.executor);
@@ -1376,7 +1625,16 @@
                     setMasterExecutorFeedback(result.message || 'Pelaksana berhasil disimpan.', 'success');
                     renderAll();
                 } catch (error) {
-                    setMasterExecutorFeedback(error.message || 'Gagal menyimpan pelaksana ke database.', 'error');
+                    const msg = error.message || 'Gagal menyimpan pelaksana ke database.';
+                    const usages = (typeof error === 'object' && error?.usages) || [];
+                    setMasterExecutorFeedback(msg, 'error');
+                    showMasterWarning({
+                        title: 'Gagal Menyimpan Pelaksana',
+                        subtitle: 'Simpan Gagal',
+                        tone: usages.length > 0 ? 'warning' : 'error',
+                        message: msg,
+                        usages: usages,
+                    });
                 } finally {
                     addMasterExecutorButton?.removeAttribute('disabled');
                     addMasterExecutorButton?.classList.remove('opacity-60', 'cursor-not-allowed');

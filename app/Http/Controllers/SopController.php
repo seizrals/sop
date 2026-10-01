@@ -78,16 +78,39 @@ class SopController extends Controller
         $label = trim($validated['name']);
         $slug = $this->normalizeExecutorKey($label);
 
-        $executor = MasterExecutor::query()->updateOrCreate(
-            [
-                'team_id' => $team->id,
-                'slug' => $slug,
-            ],
-            [
-                'name' => $label,
-                'is_active' => true,
-            ]
-        );
+        if ($slug === '') {
+            return response()->json([
+                'message' => 'Nama pelaksana tidak valid.',
+            ], 422);
+        }
+
+        $existing = MasterExecutor::query()
+            ->where(function ($query) use ($slug, $label) {
+                $query->where('slug', $slug)
+                    ->orWhereRaw('LOWER(TRIM(name)) = ?', [mb_strtolower(trim($label))]);
+            })
+            ->first();
+
+        if ($existing) {
+            return response()->json([
+                'message' => sprintf(
+                    'Pelaksana dengan nama "%s" sudah ada di master (sudah tersimpan sebagai "%s"). Gunakan nama yang berbeda atau gunakan pelaksana yang sudah ada.',
+                    $label,
+                    (string) $existing->name
+                ),
+                'existing' => [
+                    'key' => $existing->slug,
+                    'label' => $existing->name,
+                ],
+            ], 422);
+        }
+
+        $executor = MasterExecutor::query()->create([
+            'team_id' => null,
+            'slug' => $slug,
+            'name' => $label,
+            'is_active' => true,
+        ]);
 
         return response()->json([
             'message' => 'Pelaksana berhasil disimpan ke database.',
@@ -95,6 +118,160 @@ class SopController extends Controller
                 'key' => $executor->slug,
                 'label' => $executor->name,
             ],
+        ]);
+    }
+
+    public function destroyMasterExecutor(Request $request, Team $team, string $executor): JsonResponse
+    {
+        $slug = $this->normalizeExecutorKey($executor);
+
+        if (! Schema::hasTable('master_executors')) {
+            return response()->json([
+                'message' => 'Tabel master pelaksana belum tersedia.',
+            ], 422);
+        }
+
+        $record = MasterExecutor::query()
+            ->where('slug', $slug)
+            ->first();
+
+        if (! $record) {
+            return response()->json([
+                'message' => 'Pelaksana tidak ditemukan.',
+            ], 404);
+        }
+
+        $keyVariants = collect([$slug, trim((string) $record->name)])
+            ->filter()
+            ->unique(fn ($v) => mb_strtolower(trim((string) $v)))
+            ->values()
+            ->all();
+
+        $usages = [];
+
+        SopDocument::query()
+            ->with(['team', 'activity'])
+            ->lazyById(100)
+            ->each(function (SopDocument $document) use ($keyVariants, &$usages) {
+                $docRef = sprintf(
+                    '[SOP] %s / %s',
+                    (string) optional($document->activity)->name,
+                    $document->title ?: '(SOP tanpa judul)'
+                );
+                $activities = is_array($document->activities) ? $document->activities : [];
+                $docExecutors = is_array($document->executors) ? $document->executors : [];
+
+                foreach ($docExecutors as $executor) {
+                    $execKey = mb_strtolower(trim((string) data_get($executor, 'key', '')));
+                    $execLabel = mb_strtolower(trim((string) data_get($executor, 'label', '')));
+                    foreach ($keyVariants as $variant) {
+                        if (($execKey !== '' && $execKey === mb_strtolower(trim((string) $variant)))
+                            || ($execLabel !== '' && $execLabel === mb_strtolower(trim((string) $variant)))) {
+                            $usages[$docRef] = $docRef;
+                            break 2;
+                        }
+                    }
+                }
+
+                if (isset($usages[$docRef])) {
+                    return;
+                }
+
+                foreach ($activities as $row) {
+                    $nodes = data_get($row, 'flow_nodes', []);
+                    if (! is_array($nodes)) {
+                        continue;
+                    }
+                    foreach ($nodes as $node) {
+                        $keys = [
+                            (string) data_get($node, 'executor_key', ''),
+                            (string) data_get($node, 'yes_target_executor_key', ''),
+                            (string) data_get($node, 'no_target_executor_key', ''),
+                        ];
+                        foreach ($keys as $k) {
+                            $kNorm = mb_strtolower(trim((string) $k));
+                            if ($kNorm === '') {
+                                continue;
+                            }
+                            foreach ($keyVariants as $variant) {
+                                if ($kNorm === mb_strtolower(trim((string) $variant))) {
+                                    $usages[$docRef] = $docRef;
+                                    break 4;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+        SopTemplate::query()
+            ->lazyById(100)
+            ->each(function (SopTemplate $template) use ($keyVariants, &$usages) {
+                $docRef = sprintf('[Template] %s', $template->name ?: '(Template tanpa nama)');
+                $payload = is_array($template->template_payload) ? $template->template_payload : [];
+                $activities = data_get($payload, 'activities', []);
+                $docExecutors = data_get($payload, 'executors', []);
+                $docExecutors = is_array($docExecutors) ? $docExecutors : [];
+                $activities = is_array($activities) ? $activities : [];
+
+                foreach ($docExecutors as $executor) {
+                    $execKey = mb_strtolower(trim((string) data_get($executor, 'key', '')));
+                    $execLabel = mb_strtolower(trim((string) data_get($executor, 'label', '')));
+                    foreach ($keyVariants as $variant) {
+                        if (($execKey !== '' && $execKey === mb_strtolower(trim((string) $variant)))
+                            || ($execLabel !== '' && $execLabel === mb_strtolower(trim((string) $variant)))) {
+                            $usages[$docRef] = $docRef;
+                            break 2;
+                        }
+                    }
+                }
+                if (isset($usages[$docRef])) {
+                    return;
+                }
+                foreach ($activities as $row) {
+                    $nodes = data_get($row, 'flow_nodes', []);
+                    if (! is_array($nodes)) continue;
+                    foreach ($nodes as $node) {
+                        $keys = [
+                            (string) data_get($node, 'executor_key', ''),
+                            (string) data_get($node, 'yes_target_executor_key', ''),
+                            (string) data_get($node, 'no_target_executor_key', ''),
+                        ];
+                        foreach ($keys as $k) {
+                            $kNorm = mb_strtolower(trim((string) $k));
+                            if ($kNorm === '') continue;
+                            foreach ($keyVariants as $variant) {
+                                if ($kNorm === mb_strtolower(trim((string) $variant))) {
+                                    $usages[$docRef] = $docRef;
+                                    break 4;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+        if (count($usages) > 0) {
+            $usageList = array_values($usages);
+            $shown = array_slice($usageList, 0, 3);
+            $restCount = count($usageList) - count($shown);
+            $message = sprintf(
+                'Pelaksana "%s" tidak dapat dihapus karena telah digunakan pada %s%s.',
+                (string) $record->name,
+                implode(', ', $shown),
+                $restCount > 0 ? sprintf(', dan %d lainnya', $restCount) : ''
+            );
+
+            return response()->json([
+                'message' => $message,
+                'usages' => $usageList,
+            ], 422);
+        }
+
+        $record->delete();
+
+        return response()->json([
+            'message' => sprintf('Pelaksana "%s" berhasil dihapus dari master.', (string) $record->name),
         ]);
     }
 
@@ -852,10 +1029,6 @@ class SopController extends Controller
 
         return MasterExecutor::query()
             ->where('is_active', true)
-            ->where(function ($query) use ($team) {
-                $query->whereNull('team_id')
-                    ->orWhere('team_id', $team->id);
-            })
             ->orderBy('name')
             ->get()
             ->map(fn (MasterExecutor $executor) => [
@@ -863,7 +1036,9 @@ class SopController extends Controller
                 'label' => $executor->name,
             ])
             ->merge($documentExecutors)
-            ->unique('key')
+            ->unique(function ($item) {
+                return mb_strtolower(trim((string) data_get($item, 'key', '')));
+            })
             ->values()
             ->all();
     }
@@ -876,22 +1051,37 @@ class SopController extends Controller
 
         foreach ($executors as $executor) {
             $label = trim((string) data_get($executor, 'label', ''));
-            $slug = $this->normalizeExecutorKey((string) data_get($executor, 'key', ''));
+            $rawKey = trim((string) data_get($executor, 'key', ''));
+            $slug = $this->normalizeExecutorKey($rawKey !== '' ? $rawKey : $label);
 
             if ($label === '' || $slug === '') {
                 continue;
             }
 
-            MasterExecutor::query()->updateOrCreate(
-                [
-                    'team_id' => $team->id,
-                    'slug' => $slug,
-                ],
-                [
-                    'name' => $label,
-                    'is_active' => true,
-                ]
-            );
+            $existing = MasterExecutor::query()
+                ->where(function ($query) use ($slug, $label) {
+                    $query->where('slug', $slug)
+                        ->orWhereRaw('LOWER(TRIM(name)) = ?', [mb_strtolower($label)]);
+                })
+                ->first();
+
+            if ($existing) {
+                if (! $existing->is_active || trim((string) $existing->name) !== $label) {
+                    $existing->forceFill([
+                        'name' => $label,
+                        'is_active' => true,
+                    ])->save();
+                }
+
+                continue;
+            }
+
+            MasterExecutor::query()->create([
+                'team_id' => null,
+                'slug' => $slug,
+                'name' => $label,
+                'is_active' => true,
+            ]);
         }
     }
 
