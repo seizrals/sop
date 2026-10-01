@@ -486,8 +486,9 @@
             };
 
             $svgDataUri = fn (string $svg) => 'data:image/svg+xml;base64,' . base64_encode($svg);
-            global $pendingCrossRowEntries;
+            global $pendingCrossRowEntries, $skipDefaultEntryFor;
             $pendingCrossRowEntries = [];
+            $skipDefaultEntryFor = [];
 
             $firstExecutorKey = function (array $row, array $executorKeys): ?string {
                 $orderedNodes = collect(data_get($row, 'flow_nodes', []))
@@ -549,8 +550,9 @@
                 $shapeText,
                 $activities
             ): array {
-                global $pendingCrossRowEntries;
+                global $pendingCrossRowEntries, $skipDefaultEntryFor;
                 if (! is_array($pendingCrossRowEntries)) { $pendingCrossRowEntries = []; }
+                if (! is_array($skipDefaultEntryFor)) { $skipDefaultEntryFor = []; }
                 $executorKeys = $executors->pluck('key')->all();
                 $indexByKey = array_flip($executorKeys);
 
@@ -1100,26 +1102,31 @@
                     $prevRowLastCol = ($prevRowLastKey !== null && array_key_exists($prevRowLastKey, $indexByKey)) ? $indexByKey[$prevRowLastKey] : null;
 
                     if (! $isFirstRow) {
-                        if ($prevRowLastCol === null || $prevRowLastCol === $firstCol) {
-                            $slotTracker[$firstCol]['top']['count']++;
-                            $slotTracker[$firstCol]['top']['positions']['mid'] = true;
-                            $approachY = $firstEdge['t'] - 6.5;
-                            $arrowYArg = ($firstEdge['t'] + 0.4) - $arrowPenetrate;
-                            $cells[$firstCol]['lines'][] = '<line x1="50" y1="-' . $bleedTop . '" x2="50" y2="' . $approachY . '" stroke="#000000" stroke-width="' . $lineStroke . '"/>'
-                                . '<line x1="50" y1="' . $approachY . '" x2="50" y2="' . ($firstEdge['t'] + 0.2) . '" stroke="#000000" stroke-width="' . $lineStroke . '"/>'
-                                . $arrow('down', 50, $arrowYArg);
+                        $skipDefaultEntry = isset($skipDefaultEntryFor[$rowIndex]) && $skipDefaultEntryFor[$rowIndex] === true;
+                        if (! $skipDefaultEntry) {
+                            if ($prevRowLastCol === null || $prevRowLastCol === $firstCol) {
+                                $slotTracker[$firstCol]['top']['count']++;
+                                $slotTracker[$firstCol]['top']['positions']['mid'] = true;
+                                $approachY = $firstEdge['t'] - 6.5;
+                                $arrowYArg = ($firstEdge['t'] + 0.4) - $arrowPenetrate;
+                                $cells[$firstCol]['lines'][] = '<line x1="50" y1="-' . $bleedTop . '" x2="50" y2="' . $approachY . '" stroke="#000000" stroke-width="' . $lineStroke . '"/>'
+                                    . '<line x1="50" y1="' . $approachY . '" x2="50" y2="' . ($firstEdge['t'] + 0.2) . '" stroke="#000000" stroke-width="' . $lineStroke . '"/>'
+                                    . $arrow('down', 50, $arrowYArg);
+                            } else {
+                                $slotTracker[$prevRowLastCol]['bottom']['count']++;
+                                $slotTracker[$prevRowLastCol]['bottom']['positions']['mid'] = true;
+                                $slotTracker[$firstCol]['top']['count']++;
+                                $slotTracker[$firstCol]['top']['positions']['mid'] = true;
+                                $approachY = $firstEdge['t'] - 6.5;
+                                $arrowYArg = ($firstEdge['t'] + 0.4) - $arrowPenetrate;
+                                $cells[$prevRowLastCol]['lines'][] = '<line x1="50" y1="-' . $bleedTop . '" x2="50" y2="' . $crossRowEntryY . '" stroke="#000000" stroke-width="' . $lineStroke . '"/>';
+                                $drawHorizontalLineRange(min($prevRowLastCol, $firstCol), max($prevRowLastCol, $firstCol), $crossRowEntryY);
+                                $cells[$firstCol]['lines'][] = '<line x1="50" y1="' . $crossRowEntryY . '" x2="50" y2="' . $approachY . '" stroke="#000000" stroke-width="' . $lineStroke . '"/>'
+                                    . '<line x1="50" y1="' . $approachY . '" x2="50" y2="' . ($firstEdge['t'] + 0.2) . '" stroke="#000000" stroke-width="' . $lineStroke . '"/>'
+                                    . $arrow('down', 50, $arrowYArg);
+                            }
                         } else {
-                            $slotTracker[$prevRowLastCol]['bottom']['count']++;
-                            $slotTracker[$prevRowLastCol]['bottom']['positions']['mid'] = true;
-                            $slotTracker[$firstCol]['top']['count']++;
-                            $slotTracker[$firstCol]['top']['positions']['mid'] = true;
-                            $approachY = $firstEdge['t'] - 6.5;
-                            $arrowYArg = ($firstEdge['t'] + 0.4) - $arrowPenetrate;
-                            $cells[$prevRowLastCol]['lines'][] = '<line x1="50" y1="-' . $bleedTop . '" x2="50" y2="' . $crossRowEntryY . '" stroke="#000000" stroke-width="' . $lineStroke . '"/>';
-                            $drawHorizontalLineRange(min($prevRowLastCol, $firstCol), max($prevRowLastCol, $firstCol), $crossRowEntryY);
-                            $cells[$firstCol]['lines'][] = '<line x1="50" y1="' . $crossRowEntryY . '" x2="50" y2="' . $approachY . '" stroke="#000000" stroke-width="' . $lineStroke . '"/>'
-                                . '<line x1="50" y1="' . $approachY . '" x2="50" y2="' . ($firstEdge['t'] + 0.2) . '" stroke="#000000" stroke-width="' . $lineStroke . '"/>'
-                                . $arrow('down', 50, $arrowYArg);
+                            unset($skipDefaultEntryFor[$rowIndex]);
                         }
                     }
 
@@ -1129,18 +1136,33 @@
                     $nextRowFirstCol = ($nextRowFirstKey !== null && array_key_exists($nextRowFirstKey, $indexByKey)) ? $indexByKey[$nextRowFirstKey] : null;
 
                     if (! $isLastRow) {
-                        if ($nextRowFirstCol === null || $nextRowFirstCol === $lastCol) {
-                            $slotTracker[$lastCol]['bottom']['count']++;
-                            $slotTracker[$lastCol]['bottom']['positions']['mid'] = true;
-                            $cells[$lastCol]['lines'][] = '<line x1="50" y1="' . ($lastEdge['b']) . '" x2="50" y2="' . ($viewHeight + $bleedTop) . '" stroke="#000000" stroke-width="' . $lineStroke . '"/>';
+                        $needSideEntryDefault = false;
+                        $defaultEntrySide = 'top';
+                        if ($nextRowFirstCol !== null && $nextRowFirstCol !== $lastCol) {
+                            $hasDecThisRow = count($decisionColsThisRow) > 0;
+                            $distDefault = abs($nextRowFirstCol - $lastCol);
+                            if ($distDefault > 1 || $hasDecThisRow) {
+                                $needSideEntryDefault = true;
+                                $defaultEntrySide = ($nextRowFirstCol < $lastCol) ? 'right' : 'left';
+                            }
+                        }
+                        if (! $needSideEntryDefault) {
+                            if ($nextRowFirstCol === null || $nextRowFirstCol === $lastCol) {
+                                $slotTracker[$lastCol]['bottom']['count']++;
+                                $slotTracker[$lastCol]['bottom']['positions']['mid'] = true;
+                                $cells[$lastCol]['lines'][] = '<line x1="50" y1="' . ($lastEdge['b']) . '" x2="50" y2="' . ($viewHeight + $bleedTop) . '" stroke="#000000" stroke-width="' . $lineStroke . '"/>';
+                            } else {
+                                $slotTracker[$lastCol]['bottom']['count']++;
+                                $slotTracker[$lastCol]['bottom']['positions']['mid'] = true;
+                                $slotTracker[$nextRowFirstCol]['top']['count']++;
+                                $slotTracker[$nextRowFirstCol]['top']['positions']['mid'] = true;
+                                $cells[$lastCol]['lines'][] = '<line x1="50" y1="' . ($lastEdge['b']) . '" x2="50" y2="' . $crossRowExitY . '" stroke="#000000" stroke-width="' . $lineStroke . '"/>';
+                                $drawHorizontalLineRange(min($lastCol, $nextRowFirstCol), max($lastCol, $nextRowFirstCol), $crossRowExitY);
+                                $cells[$nextRowFirstCol]['lines'][] = '<line x1="50" y1="' . $crossRowExitY . '" x2="50" y2="' . ($viewHeight + $bleedTop) . '" stroke="#000000" stroke-width="' . $lineStroke . '"/>';
+                            }
                         } else {
-                            $slotTracker[$lastCol]['bottom']['count']++;
-                            $slotTracker[$lastCol]['bottom']['positions']['mid'] = true;
-                            $slotTracker[$nextRowFirstCol]['top']['count']++;
-                            $slotTracker[$nextRowFirstCol]['top']['positions']['mid'] = true;
-                            $cells[$lastCol]['lines'][] = '<line x1="50" y1="' . ($lastEdge['b']) . '" x2="50" y2="' . $crossRowExitY . '" stroke="#000000" stroke-width="' . $lineStroke . '"/>';
-                            $drawHorizontalLineRange(min($lastCol, $nextRowFirstCol), max($lastCol, $nextRowFirstCol), $crossRowExitY);
-                            $cells[$nextRowFirstCol]['lines'][] = '<line x1="50" y1="' . $crossRowExitY . '" x2="50" y2="' . ($viewHeight + $bleedTop) . '" stroke="#000000" stroke-width="' . $lineStroke . '"/>';
+                            $skipDefaultEntryFor[$rowIndex + 1] = true;
+                            $drawExplicitSource($lastCol, $nextRowFirstCol, 'bottom', 'mid', $lastEdge, $rowIndex + 1, null, $defaultEntrySide);
                         }
                     }
 
@@ -1160,25 +1182,52 @@
                             elseif ($slot === 'lower') { $entryX = $entryXBase + $slotDelta; }
 
                             $targetNode = $nodeByCol[$targetCol] ?? null;
-                            $entryTopY = 26;
+                            $te = ['l' => 28, 'r' => 72, 't' => 17, 'b' => 35];
                             if ($targetNode !== null) {
                                 $te = $edge($targetNode['type']);
-                                $entryTopY = $te['t'];
                             }
-                            $approachDist = 6.5;   // Jarak pendek (sebelum shape), turun 6.5 unit sebelum shape
-                            $preShapeY = $entryTopY - $approachDist;   // Jarak aman di atas shape, sebelum mengarah ke shape
+                            $shapeCenterY = 26;
 
-                            // 1. Vertical from TOP SVG sampai ke preShapeY (jarak sebelum shape)
-                            $cells[$targetCol]['lines'][] = '<line x1="' . $entryX . '" y1="-' . $bleedTop . '" x2="' . $entryX . '" y2="' . $preShapeY . '" stroke="#000000" stroke-width="' . $lineStroke . '"/>';
-                            // 2. Turun vertikal PENDEK TERAKHIR dari preShapeY (jarak aman) sampai ke boundary LUAR shape (tidak menembus)
-                            $lastLineEndY = $entryTopY + 0.2;  // cuma 0.2 unit lewat boundary luar (sambung ke arrow ujung)
-                            $cells[$targetCol]['lines'][] = '<line x1="' . $entryX . '" y1="' . $preShapeY . '" x2="' . $entryX . '" y2="' . $lastLineEndY . '" stroke="#000000" stroke-width="' . $lineStroke . '"/>';
-                            // 3. Arrow TEPAT DI ATAS shape:
-                            //    Kita mau TIP arrow (puncak segitiga) HANYA menembus 0.4 unit ke dalam shape.
-                            //    Function arrow('down', $x, $yArg) menghasilkan tip di y = $yArg + $arrowPenetrate.
-                            //    Jadi yArg = (entryTopY + 0.4) - $arrowPenetrate → agar base segitiga TETAP DI ATAS shape (tidak tabrak fill).
-                            $arrowYArg = ($entryTopY + 0.4) - $arrowPenetrate;
-                            $cells[$targetCol]['lines'][] = $arrow('down', $entryX, $arrowYArg);
+                            if ($entrySideForSlot === 'top') {
+                                $entryTopY = $te['t'];
+                                $approachDist = 6.5;
+                                $preShapeY = $entryTopY - $approachDist;
+                                $cells[$targetCol]['lines'][] = '<line x1="' . $entryX . '" y1="-' . $bleedTop . '" x2="' . $entryX . '" y2="' . $preShapeY . '" stroke="#000000" stroke-width="' . $lineStroke . '"/>';
+                                $lastLineEndY = $entryTopY + 0.2;
+                                $cells[$targetCol]['lines'][] = '<line x1="' . $entryX . '" y1="' . $preShapeY . '" x2="' . $entryX . '" y2="' . $lastLineEndY . '" stroke="#000000" stroke-width="' . $lineStroke . '"/>';
+                                $arrowYArg = ($entryTopY + 0.4) - $arrowPenetrate;
+                                $cells[$targetCol]['lines'][] = $arrow('down', $entryX, $arrowYArg);
+                            } elseif ($entrySideForSlot === 'right') {
+                                $entryYBase = $shapeCenterY;
+                                $slotY = $entryYBase;
+                                if ($slot === 'upper') $slotY = $entryYBase - $slotDelta;
+                                elseif ($slot === 'lower') $slotY = $entryYBase + $slotDelta;
+                                $shapeRightX = $te['r'];
+                                $approachX = $shapeRightX + 5.5;
+                                $cells[$targetCol]['lines'][] = '<line x1="' . $entryX . '" y1="-' . $bleedTop . '" x2="' . $entryX . '" y2="' . $slotY . '" stroke="#000000" stroke-width="' . $lineStroke . '"/>';
+                                if (abs($entryX - $approachX) > 0.01) {
+                                    $cells[$targetCol]['lines'][] = '<line x1="' . $entryX . '" y1="' . $slotY . '" x2="' . $approachX . '" y2="' . $slotY . '" stroke="#000000" stroke-width="' . $lineStroke . '"/>';
+                                }
+                                $lastLineEndX = $shapeRightX + 0.2;
+                                $cells[$targetCol]['lines'][] = '<line x1="' . $approachX . '" y1="' . $slotY . '" x2="' . $lastLineEndX . '" y2="' . $slotY . '" stroke="#000000" stroke-width="' . $lineStroke . '"/>';
+                                $arrowXArg = ($shapeRightX + 0.4) - $arrowPenetrate;
+                                $cells[$targetCol]['lines'][] = $arrow('left', $arrowXArg, $slotY);
+                            } elseif ($entrySideForSlot === 'left') {
+                                $entryYBase = $shapeCenterY;
+                                $slotY = $entryYBase;
+                                if ($slot === 'upper') $slotY = $entryYBase - $slotDelta;
+                                elseif ($slot === 'lower') $slotY = $entryYBase + $slotDelta;
+                                $shapeLeftX = $te['l'];
+                                $approachX = $shapeLeftX - 5.5;
+                                $cells[$targetCol]['lines'][] = '<line x1="' . $entryX . '" y1="-' . $bleedTop . '" x2="' . $entryX . '" y2="' . $slotY . '" stroke="#000000" stroke-width="' . $lineStroke . '"/>';
+                                if (abs($entryX - $approachX) > 0.01) {
+                                    $cells[$targetCol]['lines'][] = '<line x1="' . $entryX . '" y1="' . $slotY . '" x2="' . $approachX . '" y2="' . $slotY . '" stroke="#000000" stroke-width="' . $lineStroke . '"/>';
+                                }
+                                $lastLineEndX = $shapeLeftX - 0.2;
+                                $cells[$targetCol]['lines'][] = '<line x1="' . $approachX . '" y1="' . $slotY . '" x2="' . $lastLineEndX . '" y2="' . $slotY . '" stroke="#000000" stroke-width="' . $lineStroke . '"/>';
+                                $arrowXArg = ($shapeLeftX - 0.4) + $arrowPenetrate;
+                                $cells[$targetCol]['lines'][] = $arrow('right', $arrowXArg, $slotY);
+                            }
                         }
                         unset($pendingCrossRowEntries[$rowIndex]);
                     }
@@ -1303,11 +1352,11 @@
                                 // POINT 2 (Process LEFT) + POINT 4 (Process RIGHT)
                                 if ($processLeft) {
                                     $yExit = 'right';
-                                    $yEntry = (in_array($toCol, $processColsThisRow, true)) ? 'bottom' : ($toType === 'decision' ? 'top' : ($toCol > $fromCol ? 'left' : 'right'));
+                                    $yEntry = ($toType === 'decision') ? 'top' : ($toCol > $fromCol ? 'left' : 'right');
                                 } else {
                                     // POINT 4 simetris: Process RIGHT
                                     $yExit = 'left';
-                                    $yEntry = (in_array($toCol, $processColsThisRow, true)) ? 'bottom' : ($toType === 'decision' ? 'top' : ($toCol > $fromCol ? 'left' : 'right'));
+                                    $yEntry = ($toType === 'decision') ? 'top' : ($toCol > $fromCol ? 'left' : 'right');
                                 }
                                 $tExit = 'bottom';
                                 $tEntry = 'bottom';
@@ -1337,9 +1386,19 @@
                             if ($yesToNextActivity) { $yEntry = 'top'; }
                             if ($tToNextActivity) { $tEntry = 'top'; }
 
+                            $pickEntrySide = function (int $fc, int $tc, bool $toNext, bool $rowHasDec): string {
+                                if (! $toNext) return 'top';
+                                if ($fc === $tc) return 'top';
+                                $dist = abs($fc - $tc);
+                                if ($dist <= 1 && ! $rowHasDec) return 'top';
+                                return ($tc < $fc) ? 'right' : 'left';
+                            };
+                            $hasDecThisRow = count($decisionColsThisRow) > 0;
+
                             $ySameRow = ($yesIdx === $rowIndex);
                             if (! $ySameRow) {
-                                $drawExplicitSource($fromCol, $toCol, $yExit, 'mid', $fromEdge, $yesIdx, 'Y', 'top');
+                                $ySide = $pickEntrySide($fromCol, $toCol, $yesToNextActivity, $hasDecThisRow);
+                                $drawExplicitSource($fromCol, $toCol, $yExit, 'mid', $fromEdge, $yesIdx, 'Y', $ySide);
                             } else {
                                 $drawElbow($fromCol, $toCol, $yExit, $yEntry, 'mid', 'mid', $fromEdge, $toEdge, 'Y');
                             }
@@ -1363,14 +1422,21 @@
                                 if ($noCol !== null && $noNode !== null && ! isset($drawnBranches[$i.'-T'])) {
                                     $noEdge = $edge($noNode['type']);
                                     if (! $tSameRow) {
-                                        $drawExplicitSource($fromCol, $noCol, $tExit, 'mid', $fromEdge, $noActivityIdx, 'T', 'top');
+                                        $tSide = $pickEntrySide($fromCol, $noCol, $tToNextActivity, $hasDecThisRow);
+                                        $drawExplicitSource($fromCol, $noCol, $tExit, 'mid', $fromEdge, $noActivityIdx, 'T', $tSide);
                                     } else {
-                                        $drawElbow($fromCol, $noCol, $tExit, $tEntry, 'mid', 'mid', $fromEdge, $noEdge, 'T');
+                                        if ($tBackToPartnerProcess || ! in_array($noCol, $processColsThisRow, true)) {
+                                            $tEntryForSame = $tEntry;
+                                        } else {
+                                            $tEntryForSame = ($noCol > $fromCol) ? 'left' : 'right';
+                                        }
+                                        $drawElbow($fromCol, $noCol, $tExit, $tEntryForSame, 'mid', 'mid', $fromEdge, $noEdge, 'T');
                                     }
                                     $drawnBranches[$i.'-T'] = true;
                                 } elseif (! $noInSameActivity && $tToPriorActivity && ! isset($drawnBranches[$i.'-T'])) {
                                     if ($tIdx !== null) {
-                                        $drawExplicitSource($fromCol, $fromCol, $tExit, 'mid', $fromEdge, $tIdx, 'T', 'top');
+                                        $tSide2 = $pickEntrySide($fromCol, $fromCol, false, $hasDecThisRow);
+                                        $drawExplicitSource($fromCol, $fromCol, $tExit, 'mid', $fromEdge, $tIdx, 'T', $tSide2);
                                     }
                                     $drawnBranches[$i.'-T'] = true;
                                 }
@@ -1380,6 +1446,14 @@
                             $yesIdx2 = (int) $from['yes_target'] - 1;
                             $yToNext2 = ($yesIdx2 > $rowIndex);
                             $ySameRow2 = ($yesIdx2 === $rowIndex);
+                            $hasDecThisRow2 = count($decisionColsThisRow) > 0;
+                            $pickEntrySide2 = function (int $fc, int $tc, bool $toNext, bool $rowHasDec): string {
+                                if (! $toNext) return 'top';
+                                if ($fc === $tc) return 'top';
+                                $dist = abs($fc - $tc);
+                                if ($dist <= 1 && ! $rowHasDec) return 'top';
+                                return ($tc < $fc) ? 'right' : 'left';
+                            };
                             $toRule = function ($toType2, $fromCol2, $toCol2, $fromType2, $yToNext, $tIdx = null, $rowIdx = null) {
                                 $tToNext = ($tIdx !== null && $rowIdx !== null && $tIdx > $rowIdx);
                                 $ret = null;
@@ -1399,11 +1473,16 @@
                                 return $ret;
                             };
                             [$yExit, $yEntry] = $toRule($toType, $fromCol, $toCol, $fromType, $yToNext2);
-                            if ($yToNext2 || $yesIdx2 !== $rowIndex) { $yEntry = 'top'; }
                             if (! $ySameRow2) {
-                                $drawExplicitSource($fromCol, $toCol, $yExit, 'mid', $fromEdge, $yesIdx2, 'Y', 'top');
+                                $ySide2 = $pickEntrySide2($fromCol, $toCol, ($yesIdx2 > $rowIndex), $hasDecThisRow2);
+                                $drawExplicitSource($fromCol, $toCol, $yExit, 'mid', $fromEdge, $yesIdx2, 'Y', $ySide2);
                             } else {
-                                $drawElbow($fromCol, $toCol, $yExit, $yEntry, 'mid', 'mid', $fromEdge, $toEdge, 'Y');
+                                if (in_array($toCol, $processColsThisRow, true) && $toType !== 'decision') {
+                                    $yEntrySame = ($toCol > $fromCol) ? 'left' : 'right';
+                                } else {
+                                    $yEntrySame = $yEntry;
+                                }
+                                $drawElbow($fromCol, $toCol, $yExit, $yEntrySame, 'mid', 'mid', $fromEdge, $toEdge, 'Y');
                             }
 
                             if ($hasExplicitNo) {
@@ -1425,7 +1504,6 @@
                                     $noEdge = $edge($noNode['type']);
                                     $noType = trim($noNode['type']);
                                     [$tExit, $tEntry] = $toRule($noType, $fromCol, $noCol, $fromType, false, $noActivityIdx, $rowIndex);
-                                    if ($noActivityIdx > $rowIndex) { $tEntry = 'top'; }
                                     if ($tExit === $yExit) {
                                         $alternatives = ['bottom', 'left', 'right', 'top'];
                                         foreach ($alternatives as $alt) {
@@ -1433,9 +1511,15 @@
                                         }
                                     }
                                     if ($noActivityIdx !== $rowIndex) {
-                                        $drawExplicitSource($fromCol, $noCol, $tExit, 'mid', $fromEdge, $noActivityIdx, 'T', 'top');
+                                        $tSide2 = $pickEntrySide2($fromCol, $noCol, ($noActivityIdx > $rowIndex), $hasDecThisRow2);
+                                        $drawExplicitSource($fromCol, $noCol, $tExit, 'mid', $fromEdge, $noActivityIdx, 'T', $tSide2);
                                     } else {
-                                        $drawElbow($fromCol, $noCol, $tExit, $tEntry, 'mid', 'mid', $fromEdge, $noEdge, 'T');
+                                        if (in_array($noCol, $processColsThisRow, true) && $noType !== 'decision') {
+                                            $tEntrySame2 = ($noCol > $fromCol) ? 'left' : 'right';
+                                        } else {
+                                            $tEntrySame2 = $tEntry;
+                                        }
+                                        $drawElbow($fromCol, $noCol, $tExit, $tEntrySame2, 'mid', 'mid', $fromEdge, $noEdge, 'T');
                                     }
                                     $drawnBranches[$i.'-T'] = true;
                                 }

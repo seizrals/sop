@@ -27,12 +27,12 @@
         return [
             'root_key' => $rootKey,
             'model' => $document,
-            'title' => $document->title,
+            'title' => $document->title ?: 'SOP Tanpa Judul',
             'sop_number' => $document->sop_number ?: '-',
-            'year' => $matches[1] ?? $document->year,
+            'year' => $matches[1] ?? ($document->year ?: '-'),
             'status' => $status,
             'revision_number' => $document->revision_number,
-            'short_title' => \Illuminate\Support\Str::limit($document->title, 56),
+            'short_title' => \Illuminate\Support\Str::limit($document->title ?: 'SOP Tanpa Judul', 56),
             'updated_at' => $updatedAt,
             'updater_name' => $updaterName,
         ];

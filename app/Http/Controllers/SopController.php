@@ -690,7 +690,7 @@ class SopController extends Controller
         Team $team,
         TeamActivity $activity
     ): RedirectResponse {
-        $validated = $request->validate($this->documentValidationRules());
+        $validated = $request->validate($this->documentValidationRules($request));
 
         $user = auth()->user();
         $role = $user?->role;
@@ -730,12 +730,19 @@ class SopController extends Controller
             ->with('success', $message);
     }
 
-    private function documentValidationRules(): array
+    private function documentValidationRules(Request $request): array
     {
+        $statusAction = $request->input('status_action', 'draft');
+        $isFinal = $statusAction === 'final';
+
         return [
             'sop_number' => ['nullable', 'string', 'max:255'],
-            'title' => ['required', 'string', 'max:255'],
-            'year' => ['required', 'digits:4'],
+            'title' => $isFinal
+                ? ['required', 'string', 'max:255']
+                : ['nullable', 'string', 'max:255'],
+            'year' => $isFinal
+                ? ['required', 'digits:4']
+                : ['nullable', 'digits:4'],
             'creation_date' => ['nullable', 'date'],
             'revision_date' => ['nullable', 'date'],
             'effective_date' => ['nullable', 'date'],
@@ -770,8 +777,8 @@ class SopController extends Controller
             'created_by_id' => $document->created_by_id ?: $this->defaultUserId(),
             'updated_by_id' => $this->defaultUserId(),
             'sop_number' => $validated['sop_number'] ?: null,
-            'title' => $validated['title'],
-            'year' => (int) $validated['year'],
+            'title' => filled($validated['title'] ?? null) ? $validated['title'] : null,
+            'year' => filled($validated['year'] ?? null) ? (int) $validated['year'] : null,
             'status' => $validated['status_action'],
             'creation_date' => $validated['creation_date'] ?: null,
             'revision_date' => $validated['revision_date'] ?: null,

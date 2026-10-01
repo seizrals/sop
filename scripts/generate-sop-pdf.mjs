@@ -903,6 +903,14 @@ const drawActivityTableAndFlows = (overrideStartY = null) => {
       }
     });
 
+    const pickEntrySide = (fromIdx, toIdx, toNext, rowHasDec) => {
+      if (!toNext) return 'top';
+      if (fromIdx === toIdx) return 'top';
+      const dist = Math.abs(fromIdx - toIdx);
+      if (dist <= 1 && !rowHasDec) return 'top';
+      return (toIdx < fromIdx) ? 'right' : 'left';
+    };
+
     const buildSideRule = (
       fromRoleIdx, toRoleIdx, fromType, toType,
       sameRow, sameActivityHasPD, processColsThisRow = [], decisionColsThisRow = [],
@@ -914,19 +922,16 @@ const drawActivityTableAndFlows = (overrideStartY = null) => {
       }
       if (sameActivityHasPD && fromType === 'decision' && partnerInfo !== null) {
         const processLeft = partnerInfo.processLeftOfDecision === true;
-        const processRight = partnerInfo.processLeftOfDecision === false;
         const inSameRowProcesses = processColsThisRow.includes(toRoleIdx);
         if (inSameRowProcesses && sameRow) {
           if (processLeft) {
             return [isNoBranch ? 'bottom' : 'right',
                     isNoBranch ? 'bottom' : (toRoleIdx > fromRoleIdx ? 'left' : 'right')];
           }
-          // Process RIGHT (simetris)
           return [isNoBranch ? 'bottom' : 'left',
                   isNoBranch ? 'bottom' : (toRoleIdx > fromRoleIdx ? 'left' : 'right')];
         }
         if (!inSameRowProcesses && isNoBranch && !sameRow) {
-          // Point 3 & 5: T ke kegiatan LUAR (sebelumnya)
           return [processLeft ? 'right' : 'left', 'top'];
         }
       }
@@ -1077,14 +1082,35 @@ const drawActivityTableAndFlows = (overrideStartY = null) => {
                   yEntry = 'top';
                 }
 
-                // ATURAN BARU USER: apapun branch-nya, KE ROW BAWAH (idx > rowIndex) → entry = top
-                // TIDAK PAKAI sameRow filter! (karena next-row berarti sameRow=FALSE)
-                if (yTargetIdx > rowIndex) yEntry = 'top';
-                if (hasExplicitNoTarget && tIdx !== null && tIdx > rowIndex && tEntry !== null) tEntry = 'top';
+                // ATURAN UTAMA: Prioritaskan TOP untuk row di bawah, FALLBACK ke SIDE entry (kanan/kiri) jika berpotensi tabrakan
+                // (jarak kolom > 1 ATAU row ini punya Decision node yang pakai horizontal lane)
+                const rowHasDec = decisionColsThisRow.length > 0;
+                if (yTargetIdx > rowIndex) {
+                  yEntry = pickEntrySide(fromRoleIdx, toRoleIdx, true, rowHasDec);
+                }
+                if (hasExplicitNoTarget && tIdx !== null && tIdx > rowIndex && tEntry !== null) {
+                  const tToRoleIdx = firstTargetMeta(tIdx, tExecKey) ? getRoleIndex(firstTargetMeta(tIdx, tExecKey).node.executor_key) : toRoleIdx;
+                  tEntry = pickEntrySide(fromRoleIdx, tToRoleIdx, true, rowHasDec);
+                }
+                // Same-row Y ke Process: gunakan LEFT/RIGHT entry (bukan top/bottom kecuali partner-back)
+                if (sameRow && toType !== 'decision') {
+                  if (!(tBackToPartnerProcess && false)) {
+                    yEntry = (toRoleIdx > fromRoleIdx) ? 'left' : 'right';
+                  }
+                }
               } else {
-                // BUKAN same-activity PD-row: pastikan ke next-row entry juga TOP
-                if (yTargetIdx > rowIndex) yEntry = 'top';
-                if (hasExplicitNoTarget && tIdx !== null && tIdx > rowIndex && tEntry !== null) tEntry = 'top';
+                // BUKAN same-activity PD-row
+                const rowHasDec2 = decisionColsThisRow.length > 0;
+                if (yTargetIdx > rowIndex) {
+                  yEntry = pickEntrySide(fromRoleIdx, toRoleIdx, true, rowHasDec2);
+                }
+                if (hasExplicitNoTarget && tIdx !== null && tIdx > rowIndex && tEntry !== null) {
+                  const tToRoleIdx2 = firstTargetMeta(tIdx, tExecKey) ? getRoleIndex(firstTargetMeta(tIdx, tExecKey).node.executor_key) : toRoleIdx;
+                  tEntry = pickEntrySide(fromRoleIdx, tToRoleIdx2, true, rowHasDec2);
+                }
+                if (yTargetIdx === rowIndex && toType !== 'decision') {
+                  yEntry = (toRoleIdx > fromRoleIdx) ? 'left' : 'right';
+                }
               }
 
               drawConnectorV2(rowIndex, currentNode.executor_key, yTargetIdx, yTargetMeta.node.executor_key, yExit, yEntry, 'Y');
@@ -1099,16 +1125,12 @@ const drawActivityTableAndFlows = (overrideStartY = null) => {
           if (tTargetMeta) {
             const toKey = `${tTargetIdx}-${tTargetMeta.node.executor_key}`;
             if (cellCoordinates[toKey]) {
-              // Already computed tExit/tEntry in yes-branch above? Use buildSideRule again for safety
               const toRoleIdx = getRoleIndex(tTargetMeta.node.executor_key);
               const fromRoleIdx = getRoleIndex(currentNode.executor_key);
               const sameRow = tTargetIdx === rowIndex;
               const toType = tTargetMeta.node.type;
               const fromType = currentNode.type;
 
-              const yIdx = hasExplicitYesTarget ? (Number(currentNode.yes_target) - 1) : null;
-              const yIsSameActivity = (yIdx !== null && yIdx === rowIndex);
-              const yToPrior = (yIdx !== null && !yIsSameActivity && yIdx < rowIndex);
               let partner = null;
               if (sameActivityHasPD) partner = findDecisionPartnerNode(nodes, currentNode.executor_key);
               let tBackToPartnerProcess = false;
@@ -1122,6 +1144,7 @@ const drawActivityTableAndFlows = (overrideStartY = null) => {
                 true, partner
               );
 
+              const rowHasDecT = decisionColsThisRow.length > 0;
               if (sameActivityHasPD && partner) {
                 if (tBackToPartnerProcess) {
                   // POINT 2/4: T BALIK ke Process → T dari BOTTOM decision, entry di BOTTOM Process
@@ -1132,9 +1155,12 @@ const drawActivityTableAndFlows = (overrideStartY = null) => {
                   tExit = partner.processLeftOfDecision ? 'right' : 'left';
                   tEntry = 'top';
                 } else if (!sameRow && tTargetIdx > rowIndex) {
-                  // BARU: T ke KEGIATAN BERIKUTNYA (row bawah) → entry pasti TOP
+                  // T ke row BAWAH: coba TOP dulu, fallback ke SIDE jika berpotensi tabrakan
                   tExit = partner.processLeftOfDecision ? 'left' : 'right';
-                  tEntry = 'top';
+                  tEntry = pickEntrySide(fromRoleIdx, toRoleIdx, true, rowHasDecT);
+                } else if (sameRow && toType !== 'decision') {
+                  // T ke Process DI KEGIATAN YANG SAMA (bukan partner-back): entry LEFT/RIGHT
+                  tEntry = (toRoleIdx > fromRoleIdx) ? 'left' : 'right';
                 }
               } else if (!sameActivityHasPD) {
                 const track = ensureSlotTracker(rowIndex);
@@ -1145,16 +1171,20 @@ const drawActivityTableAndFlows = (overrideStartY = null) => {
                     if (!fromCell[alt] || fromCell[alt].count === 0) { tExit = alt; break; }
                   }
                 }
-                if (tExit === 'top' || tExit === 'bottom') {
+                if (tTargetIdx > rowIndex) {
+                  tEntry = pickEntrySide(fromRoleIdx, toRoleIdx, true, rowHasDecT);
+                } else if (sameRow && toType !== 'decision') {
+                  tEntry = (toRoleIdx > fromRoleIdx) ? 'left' : 'right';
+                } else if (tExit === 'top' || tExit === 'bottom') {
                   tEntry = 'top';
                 } else {
                   tEntry = tExit === 'right' ? 'left' : 'right';
                 }
               }
 
-              // Global enforce: setiap koneksi ke row BAWAH → entry = TOP
+              // Fallback tabrakan final untuk cross-row: gunakan pickEntrySide
               if (!sameRow && tTargetIdx > rowIndex) {
-                tEntry = 'top';
+                tEntry = pickEntrySide(fromRoleIdx, toRoleIdx, true, rowHasDecT);
               }
 
               drawConnectorV2(rowIndex, currentNode.executor_key, tTargetIdx, tTargetMeta.node.executor_key, tExit, tEntry, 'T');
@@ -1184,6 +1214,10 @@ const drawActivityTableAndFlows = (overrideStartY = null) => {
             true, sameActivityHasPD, processColsThisRow, decisionColsThisRow,
             false, null
           );
+
+          if (nextType !== 'decision' && sameActivityHasPD) {
+            entrySide = (toRoleIdx > fromRoleIdx) ? 'left' : 'right';
+          }
 
           const label = curType === 'decision' ? 'Y' : null;
           drawConnectorV2(rowIndex, currentNode.executor_key, rowIndex, nextNode.executor_key, exitSide, entrySide, label);
@@ -1223,28 +1257,41 @@ const drawActivityTableAndFlows = (overrideStartY = null) => {
         doc.setPage(fromC.page);
         setLineStyle();
 
+        const distDefaultConn = Math.abs(sourceRoleIdx - targetRoleIdx);
+        const rowHasDecNow = decisionColsThisRow.length > 0;
+        const useSideEntryDefault = (sourceRoleIdx !== targetRoleIdx) && (distDefaultConn > 1 || rowHasDecNow);
+
         if (lastNode.type === 'decision') {
-          const exitSide = targetRoleIdx >= sourceRoleIdx ? 'right' : 'left';
-          const labelXOffset = exitSide === 'right' ? 2.8 : -2.8;
+          const exitSideDec = targetRoleIdx >= sourceRoleIdx ? 'right' : 'left';
+          const labelXOffset = exitSideDec === 'right' ? 2.8 : -2.8;
           const lx = fx + labelXOffset;
           const ly = startYEdge + 1.8;
           drawBranchLabel('Y', lx, ly, 'exact');
         }
 
-        if (lastNode.executor_key === firstNextNode.executor_key) {
-          const preShapeY = endYEdge - 2.4;
-          doc.line(fx, startYEdge, fx, preShapeY);
-          doc.line(fx, preShapeY, fx, endYEdge + ARROW_PENETRATE_MM);
-          drawArrow(fx, endYEdge + ARROW_PENETRATE_MM, 'down');
-        } else {
-          doc.line(fx, startYEdge, fx, rowBottomY);
-          if (Math.abs(tx - fx) > 0.1) {
-            doc.line(fx, rowBottomY, tx, rowBottomY);
+        if (!useSideEntryDefault) {
+          if (lastNode.executor_key === firstNextNode.executor_key) {
+            const preShapeY = endYEdge - 2.4;
+            doc.line(fx, startYEdge, fx, preShapeY);
+            doc.line(fx, preShapeY, fx, endYEdge + ARROW_PENETRATE_MM);
+            drawArrow(fx, endYEdge + ARROW_PENETRATE_MM, 'down');
+          } else {
+            doc.line(fx, startYEdge, fx, rowBottomY);
+            if (Math.abs(tx - fx) > 0.1) {
+              doc.line(fx, rowBottomY, tx, rowBottomY);
+            }
+            const preShapeY = endYEdge - 2.4;
+            doc.line(tx, rowBottomY, tx, preShapeY);
+            doc.line(tx, preShapeY, tx, endYEdge + ARROW_PENETRATE_MM);
+            drawArrow(tx, endYEdge + ARROW_PENETRATE_MM, 'down');
           }
-          const preShapeY = endYEdge - 2.4;
-          doc.line(tx, rowBottomY, tx, preShapeY);
-          doc.line(tx, preShapeY, tx, endYEdge + ARROW_PENETRATE_MM);
-          drawArrow(tx, endYEdge + ARROW_PENETRATE_MM, 'down');
+        } else {
+          const defEntrySide = pickEntrySide(sourceRoleIdx, targetRoleIdx, true, rowHasDecNow);
+          drawConnectorV2(
+            rowIndex, lastNode.executor_key,
+            rowIndex + 1, firstNextNode.executor_key,
+            'bottom', defEntrySide, null
+          );
         }
       }
     });

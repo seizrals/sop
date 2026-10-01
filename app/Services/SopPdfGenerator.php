@@ -85,7 +85,7 @@ class SopPdfGenerator
         }
 
         return [
-            'title' => $document->title,
+            'title' => $document->title ?: 'SOP Tanpa Judul',
             'sop_number' => $document->sop_number,
             'creation_date' => optional($document->creation_date)->format('Y-m-d'),
             'revision_date' => optional($document->revision_date)->format('Y-m-d'),
