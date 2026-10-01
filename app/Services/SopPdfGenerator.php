@@ -59,6 +59,31 @@ class SopPdfGenerator
     {
         $teamName = strtoupper((string) optional($document->team)->display_name);
 
+        $usedExecutorKeys = $activities
+            ->flatMap(fn ($row) => collect(data_get($row, 'flow_nodes', []))
+                ->map(fn ($node) => (string) data_get($node, 'executor_key'))
+                ->filter(fn ($key) => filled($key)))
+            ->unique()
+            ->values()
+            ->all();
+
+        $filteredExecutors = $executors;
+        if (count($usedExecutorKeys) > 0) {
+            $executorByKey = [];
+            foreach ($executors as $executor) {
+                $executorByKey[(string) data_get($executor, 'key')] = $executor;
+            }
+            $rebuilt = collect();
+            foreach ($usedExecutorKeys as $key) {
+                if (isset($executorByKey[$key])) {
+                    $rebuilt->push($executorByKey[$key]);
+                } else {
+                    $rebuilt->push(['key' => (string) $key, 'label' => (string) $key]);
+                }
+            }
+            $filteredExecutors = $rebuilt->values();
+        }
+
         return [
             'title' => $document->title,
             'sop_number' => $document->sop_number,
@@ -80,7 +105,7 @@ class SopPdfGenerator
                 'TIM STATISTIK ' . ($teamName !== '' ? $teamName : 'PRODUKSI'),
             ],
             'logo_path' => resource_path('img/logo-bps.png'),
-            'executors' => $executors->values()->map(fn ($executor) => [
+            'executors' => $filteredExecutors->values()->map(fn ($executor) => [
                 'key' => (string) data_get($executor, 'key'),
                 'label' => (string) data_get($executor, 'label'),
             ])->all(),

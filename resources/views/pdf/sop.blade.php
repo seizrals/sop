@@ -388,6 +388,30 @@
             $executors = $executors instanceof \Illuminate\Support\Collection ? $executors->values() : collect($executors ?? [])->values();
             $activities = $activities instanceof \Illuminate\Support\Collection ? $activities->values() : collect($activities ?? [])->values();
 
+            $usedExecutorKeys = $activities
+                ->flatMap(fn ($activity) => collect(data_get($activity, 'flow_nodes', []))
+                    ->map(fn ($node) => (string) data_get($node, 'executor_key'))
+                    ->filter(fn ($key) => filled($key)))
+                ->unique()
+                ->values()
+                ->all();
+
+            if (count($usedExecutorKeys) > 0) {
+                $executorByKey = [];
+                foreach ($executors as $executor) {
+                    $executorByKey[(string) data_get($executor, 'key')] = $executor;
+                }
+                $filteredExecutors = collect();
+                foreach ($usedExecutorKeys as $key) {
+                    if (isset($executorByKey[$key])) {
+                        $filteredExecutors->push($executorByKey[$key]);
+                    } else {
+                        $filteredExecutors->push(['key' => (string) $key, 'label' => (string) $key]);
+                    }
+                }
+                $executors = $filteredExecutors->values();
+            }
+
             $executorCount = max($executors->count(), 1);
             $executorTotalWidthPercent = 42;
             $executorWidthPercent = $executorTotalWidthPercent / $executorCount;

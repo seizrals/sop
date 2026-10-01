@@ -677,7 +677,14 @@
 
                 if (masterExecutorModalList) {
                     masterExecutorModalList.innerHTML = executors.length
-                        ? executors.map((executor) => `<div class="truncate rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700" title="${escapeHtml(executor.label)}">${escapeHtml(executor.label)}</div>`).join('')
+                        ? executors.map((executor) => `
+                            <div class="group relative truncate rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 pr-10 text-sm font-semibold text-blue-700" title="${escapeHtml(executor.label)}">
+                                <span class="block truncate">${escapeHtml(executor.label)}</span>
+                                <button type="button" data-master-delete-executor="${escapeAttr(executor.key)}" class="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded-full border border-transparent text-red-500 opacity-0 transition group-hover:opacity-100 hover:border-red-200 hover:bg-red-50 hover:text-red-700 focus:opacity-100" title="Hapus pelaksana ini dari master">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                                </button>
+                            </div>
+                        `).join('')
                         : '<div class="text-sm text-slate-500">Belum ada pelaksana tersimpan.</div>';
                 }
 
@@ -686,6 +693,13 @@
                     masterExecutorModal?.classList.add('flex');
                 });
             };
+
+            const escapeAttr = (value) => String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
 
             const renderMasterExecutorResults = (query = '') => {
                 if (!masterExecutorMenu) {
@@ -719,6 +733,45 @@
             closeMasterExecutorModal?.addEventListener('click', () => {
                 masterExecutorModal?.classList.add('hidden');
                 masterExecutorModal?.classList.remove('flex');
+            });
+
+            masterExecutorModalList?.addEventListener('click', (event) => {
+                const deleteBtn = event.target.closest('[data-master-delete-executor]');
+                if (!deleteBtn) return;
+                const targetKey = String(deleteBtn.dataset.masterDeleteExecutor || '').trim();
+                if (!targetKey) return;
+
+                const inUseNodes = [];
+                activities.forEach((row, rowIndex) => {
+                    (row.flow_nodes || []).forEach((node) => {
+                        if (String(node.executor_key || '') === targetKey) {
+                            inUseNodes.push({ rowIndex, label: row.name || `Kegiatan ${rowIndex + 1}` });
+                        }
+                        if (String(node.yes_target_executor_key || '') === targetKey) {
+                            inUseNodes.push({ rowIndex, label: `Target Ya - ${row.name || `Kegiatan ${rowIndex + 1}`}` });
+                        }
+                        if (String(node.no_target_executor_key || '') === targetKey) {
+                            inUseNodes.push({ rowIndex, label: `Target Tidak - ${row.name || `Kegiatan ${rowIndex + 1}`}` });
+                        }
+                    });
+                });
+
+                const targetLabel = executors.find((e) => String(e.key) === targetKey)?.label || targetKey;
+                if (inUseNodes.length > 0) {
+                    setMasterExecutorFeedback(
+                        `Pelaksana "${targetLabel}" tidak dapat dihapus karena masih digunakan pada: ${inUseNodes.map((n) => n.label).slice(0, 3).join(', ')}${inUseNodes.length > 3 ? `, dan ${inUseNodes.length - 3} lainnya` : ''}.`,
+                        'error'
+                    );
+                    return;
+                }
+
+                if (!confirm(`Hapus pelaksana "${targetLabel}" dari master? Tindakan ini hanya menghapus dari daftar master (tidak mengubah kegiatan).`)) {
+                    return;
+                }
+
+                executors = executors.filter((e) => String(e.key) !== targetKey);
+                setMasterExecutorFeedback(`Pelaksana "${targetLabel}" dihapus dari master.`, 'success');
+                renderAll();
             });
 
             masterExecutorModal?.addEventListener('click', (event) => {
@@ -810,8 +863,22 @@
                     return;
                 }
 
-                const executorHeaders = executors.length
-                    ? executors.map((executor) => `<th class="border border-slate-300 bg-slate-50 px-2 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-600">${escapeHtml(executor.label)}</th>`).join('')
+                const usedPreviewKeys = [];
+                activities.forEach((row) => {
+                    (row.flow_nodes || []).forEach((node) => {
+                        const k = String(node.executor_key || '').trim();
+                        if (k && !usedPreviewKeys.includes(k)) usedPreviewKeys.push(k);
+                    });
+                });
+                let previewExecutors = executors;
+                if (usedPreviewKeys.length > 0) {
+                    const byKey = {};
+                    executors.forEach((e) => { byKey[String(e.key)] = e; });
+                    previewExecutors = usedPreviewKeys.map((key) => byKey[key] || { key: String(key), label: String(key) });
+                }
+
+                const executorHeaders = previewExecutors.length
+                    ? previewExecutors.map((executor) => `<th class="border border-slate-300 bg-slate-50 px-2 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-600">${escapeHtml(executor.label)}</th>`).join('')
                     : '<th class="border border-slate-300 bg-slate-50 px-2 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-600">Pelaksana</th>';
 
                 const bodyRows = activities.map((row, index) => {
@@ -822,7 +889,7 @@
                         }
                     });
 
-                    const executorCells = (executors.length ? executors : [{ key: 'executor', label: 'Pelaksana' }]).map((executor) => {
+                    const executorCells = (previewExecutors.length ? previewExecutors : [{ key: 'executor', label: 'Pelaksana' }]).map((executor) => {
                         const node = firstNodeByExecutor[executor.key];
                         return `
                             <td class="border border-slate-300 px-2 py-2">
@@ -854,7 +921,7 @@
                                     <tr>
                                         <th rowspan="2" class="border border-slate-300 bg-slate-50 px-2 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-600">No</th>
                                         <th rowspan="2" class="border border-slate-300 bg-slate-50 px-2 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-600">Kegiatan</th>
-                                        <th colspan="${Math.max(executors.length, 1)}" class="border border-slate-300 bg-slate-50 px-2 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-600">Pelaksana</th>
+                                        <th colspan="${Math.max(previewExecutors.length, 1)}" class="border border-slate-300 bg-slate-50 px-2 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-600">Pelaksana</th>
                                         <th colspan="3" class="border border-slate-300 bg-slate-50 px-2 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-600">Mutu Baku</th>
                                         <th rowspan="2" class="border border-slate-300 bg-slate-50 px-2 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-600">Keterangan</th>
                                     </tr>

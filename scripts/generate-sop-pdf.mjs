@@ -385,10 +385,27 @@ const drawActivityTableAndFlows = (overrideStartY = null) => {
 
   const startY = actualStartY;
 
-  const executors = Array.isArray(payload.executors) && payload.executors.length > 0
+  const activities = Array.isArray(payload.activities) ? payload.activities : [];
+
+  const rawExecutors = Array.isArray(payload.executors) && payload.executors.length > 0
     ? payload.executors
     : [{ key: 'executor', label: 'Pelaksana' }];
-  const activities = Array.isArray(payload.activities) ? payload.activities : [];
+
+  const usedKeys = [];
+  for (const row of activities) {
+    const nodes = Array.isArray(row.flow_nodes) ? row.flow_nodes : [];
+    for (const n of nodes) {
+      const k = String(n.executor_key || '').trim();
+      if (k && !usedKeys.includes(k)) usedKeys.push(k);
+    }
+  }
+  let executors = rawExecutors;
+  if (usedKeys.length > 0) {
+    const byKey = {};
+    for (const e of rawExecutors) byKey[String(e.key)] = e;
+    executors = usedKeys.map((key) => byKey[key] || { key: String(key), label: String(key) });
+  }
+
   const cellCoordinates = {};
   const roleMap = executors.map((executor) => executor.key);
   const getRoleIndex = (role) => roleMap.indexOf(role);
